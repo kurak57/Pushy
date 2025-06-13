@@ -8,9 +8,12 @@
 import SwiftUI
 
 struct HomeView: View {
+    @State private var showOnboarding = false
     var body: some View {
-        NavigationStack {
-            ZStack {
+        ZStack {
+            if showOnboarding {
+                OnboardingView(showOnboarding: $showOnboarding)
+            } else {
                 // Main content
                 VStack() {
                     // Title
@@ -116,7 +119,9 @@ struct HomeView: View {
                 VStack {
                     Spacer()
                     
-                    NavigationLink(destination: OnboardingView()) {
+                    Button(action: {
+                        showOnboarding = true
+                    }) {
                         Text("Start Workout")
                             .foregroundColor(.black)
                             .fontWeight(.semibold)
@@ -138,9 +143,9 @@ struct HomeView: View {
                     .padding(.bottom, 24)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.black.edgesIgnoringSafeArea(.all))
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black.edgesIgnoringSafeArea(.all))
     }
 }
 

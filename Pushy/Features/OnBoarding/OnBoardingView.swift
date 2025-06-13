@@ -8,31 +8,26 @@
 import SwiftUI
 
 struct OnboardingView: View {
-    @Environment(\.dismiss) var dismiss
+    @Binding var showOnboarding: Bool
     @State private var currentIndex = 0
 
     var body: some View {
         VStack {
             HStack {
                 Button(action: {
-                    dismiss()
+                    showOnboarding = false
                 }) {
                     Image(systemName: "chevron.left")
                         .foregroundColor(.gray)
                         .padding()
                 }
-                .frame(width: 44)
 
                 Spacer()
 
-                StepProgressView(steps: onboardingModel.count, currentStep: currentIndex)
+                StepProgressView(totalSteps: onboardingModel.count+1, currentStep: currentIndex)
                     .frame(width: 200)
                 
                 Spacer()
-                
-                // Add an empty view with the same width as the back button for balance
-                Color.clear
-                    .frame(width: 44)
             }
             .padding(.top, 16)
 
@@ -115,8 +110,6 @@ struct OnboardingView: View {
 
 struct OnboardingView_Previews: PreviewProvider {
     static var previews: some View {
-        NavigationStack {
-            OnboardingView()
-        }
+        OnboardingView(showOnboarding: .constant(true))
     }
 }
