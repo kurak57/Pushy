@@ -13,26 +13,24 @@ struct OnboardingView: View {
 
     var body: some View {
         VStack {
-            HStack {
-                Button(action: {
-                    showOnboarding = false
-                }) {
-                    Image(systemName: "chevron.left")
-                        .foregroundColor(.gray)
-                        .padding()
+            ZStack {
+                HStack {
+                    Button(action: {
+                        showOnboarding = false
+                    }) {
+                        Image(systemName: "chevron.left")
+                            .foregroundColor(.gray)
+                            .padding()
+                    }
+                    Spacer()
                 }
-
-                Spacer()
-
-                StepProgressView(totalSteps: onboardingModel.count+1, currentStep: currentIndex)
-                    .frame(width: 200)
                 
-                Spacer()
+
+                StepComponent(totalSteps: onboardingModel.count, currentStep: currentIndex)
+                    .frame(width: 200)
             }
             .padding(.top, 16)
 
-            Spacer()
-            
             // Onboarding TabView
             TabView(selection: $currentIndex) {
                 ForEach(Array(onboardingModel.enumerated()), id: \.offset) { index, step in

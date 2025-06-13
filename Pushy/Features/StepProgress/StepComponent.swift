@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct StepProgressView: View {
+struct StepComponent: View {
     let totalSteps: Int
     let currentStep: Int
 
@@ -16,9 +16,10 @@ struct StepProgressView: View {
             let circleDiameter: CGFloat = 36
             let spacing: CGFloat = 0
             let totalSpacing = CGFloat(totalSteps - 1) * spacing
-            let availableWidth = geo.size.width - (CGFloat(totalSteps) * circleDiameter) - totalSpacing
+            let availableWidth = geo.size.width - (CGFloat(totalSteps+1) * circleDiameter) - totalSpacing
             let segmentWidth = availableWidth / CGFloat(max(totalSteps - 1, 1))
-            let progressWidth = max(0, CGFloat(currentStep + 1) * (segmentWidth + circleDiameter) + circleDiameter / 2)
+            let progressWidth = max(0, CGFloat(currentStep) * (segmentWidth + circleDiameter) + circleDiameter / 2)
+            
 
             ZStack(alignment: .leading) {
                 // Background Bar
@@ -30,12 +31,12 @@ struct StepProgressView: View {
                 Capsule()
                     .fill(
                         LinearGradient(
-                            gradient: Gradient(colors: [Color.purple, Color.purple]),
+                            gradient: Gradient(colors: [Color.A, Color.B]),
                             startPoint: .leading,
                             endPoint: .trailing
                         )
                     )
-                    .frame(width: progressWidth, height: 24)
+                    .frame(width: progressWidth+circleDiameter, height: 24)
                     .animation(.easeInOut(duration: 0.3), value: currentStep)
 
                 // Step Circles
@@ -45,37 +46,32 @@ struct StepProgressView: View {
                             Circle()
                                 .fill(circleFillColor(for: index))
                                 .frame(width: circleDiameter, height: circleDiameter)
-                                .opacity(index == 0 ? 0 : 1)
 
-                            if index > 0 {
-                                Text("\(index)")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.black)
-                            }
+                            Text("\(index+1)")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.black)
                         }
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(width: availableWidth, alignment: .leading)
+                .padding(.leading, circleDiameter)
             }
         }
         .frame(height: 44)
-        .padding(.horizontal)
     }
 
     private func circleFillColor(for index: Int) -> Color {
-        guard index != 0 else { return .clear } // Circle pertama transparan
-
         switch currentStep {
         case 0:
-            return index == 1 ? .B : .defaultCircle
+            return index == 0 ? .B : .defaultCircle
         case 1:
-            if index == 1 { return .circle1 }
-            else if index == 2 { return .B }
+            if index == 0 { return .circle1 }
+            else if index == 1 { return .B }
             else { return .defaultCircle }
         case 2:
-            if index == 1 { return .circle2 }
-            else if index == 2 { return .circle3 }
-            else if index == 3 { return .B }
+            if index == 0 { return .circle2 }
+            else if index == 1 { return .circle3 }
+            else if index == 2 { return .B }
             else { return .defaultCircle }
         default:
             return .defaultCircle
@@ -84,5 +80,5 @@ struct StepProgressView: View {
 }
 
 #Preview {
-    StepProgressView(totalSteps: 4, currentStep: 1)
+    StepComponent(totalSteps: 3, currentStep: 2)
 }
