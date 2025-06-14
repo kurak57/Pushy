@@ -89,13 +89,9 @@ struct OnboardingView: View {
 
                     if currentIndex < onboardingModel.count - 1 {
                         currentIndex += 1
-                    }
-
-                    if currentIndex == onboardingModel.count - 1{
+                    } else {
                         startExercise = true
-
                     }
-                    
                 }) {
                     Text("Next")
                         .fontWeight(.bold)

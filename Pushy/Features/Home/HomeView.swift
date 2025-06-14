@@ -18,11 +18,13 @@ struct HomeView: View {
             })
             .navigationDestination(isPresented: $showOnboarding) {
                 OnboardingView(showOnboarding: $showOnboarding, startExercise: $startExercise)
-            }
-            .navigationDestination(isPresented: $startExercise) {
-                ExerciseView()
                     .navigationBarBackButtonHidden(true)
+                    .navigationDestination(isPresented: $startExercise) {
+                        ExerciseView(isPresented: $startExercise)
+                            .navigationBarBackButtonHidden(true)
+                    }
             }
+            
           
         }
         
