@@ -28,6 +28,18 @@ class ExerciseViewModel: ObservableObject {
         setupPipeline()
     }
 
+    deinit {
+        cancellables.removeAll()
+        videoCapture?.isEnabled = false
+        videoCapture = nil
+        videoProcessingChain = nil
+    }
+
+    func cleanup() {
+        videoCapture?.isEnabled = false
+        cancellables.removeAll()
+    }
+    
     func setupPipeline() {
         videoProcessingChain = VideoProcessingChain()
         videoProcessingChain.delegate = self
