@@ -21,11 +21,15 @@ struct ExerciseView: View {
     @State private var isSessionCompleted: Bool = false
     @State private var exerciseWeight: Double = 15.0
     // TODO:: Ini View Model Nya
-    //    @StateObject private var viewModel = ExerciseViewModel()
+    @StateObject private var viewModel = ExerciseViewModel()
 
     var body: some View {
         ZStack(alignment: .top) {
-            // TODO:: Panggil View Camera Nya Disini
+            // Camera Preview Background
+            CameraPreviewView(viewModel: viewModel)
+                .ignoresSafeArea()
+            
+            // Gradient Overlay
             LinearGradient(
                 gradient: Gradient(colors: [
                     Color.black.opacity(0.7),
@@ -43,7 +47,28 @@ struct ExerciseView: View {
             TopControlButtons(isPresented: $isPresented, resetAction: resetExercise)
             
             if isExerciseActive && !isSessionCompleted {
-                RepetitionCounterDisplay(repetitionCount: repetitionCount)
+                VStack {
+                    Text(viewModel.actionLabel)
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .padding()
+                        .background(Color.black.opacity(0.6))
+                        .cornerRadius(10)
+                    
+                    Text(viewModel.confidenceLabel)
+                        .font(.caption)
+                        .foregroundColor(.white)
+                        .padding(.horizontal)
+                        .background(Color.black.opacity(0.4))
+                        .cornerRadius(8)
+                }
+                .padding(.top, 100)
+                
+                Spacer()
+                
+                RepetitionCounterDisplay(repetitionCount: viewModel.repCount)
+                    .padding(.bottom, 200)
             }
 
             GeometryReader { geo in
@@ -71,9 +96,13 @@ struct ExerciseView: View {
             }
         }
         .onAppear {
+            viewModel.startCamera()
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 startCountdown()
             }
+        }
+        .onDisappear {
+            viewModel.stopCamera()
         }
         .onChange(of: countdown) { _, newValue in
             if newValue != nil {
@@ -165,6 +194,34 @@ struct ExerciseView: View {
         repetitionCount = 0
         currentSet = 0
         // Optionally, reset other exercise-specific states here if needed
+    }
+}
+
+// Camera Preview View Component
+struct CameraPreviewView: View {
+    @ObservedObject var viewModel: ExerciseViewModel
+    
+    var body: some View {
+        ZStack {
+            Color.black // Fallback background
+            
+            if let image = viewModel.renderedImage {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .clipped()
+            } else {
+                // Loading state
+                VStack {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .tint(.white)
+                    Text("Loading Camera...")
+                        .foregroundColor(.white)
+                        .padding(.top)
+                }
+            }
+        }
     }
 }
 
