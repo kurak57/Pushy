@@ -155,7 +155,12 @@ class ExerciseViewModel: ObservableObject {
                 isExerciseActive = false
                 isSessionCompleted = true
             } else {
-                startRestTimer()
+                if configuration.isRestTimerEnabled {
+                    startRestTimer()
+                } else {
+                    repetitionCount = 0
+                    startCountdown()
+                }
             }
         }
     }

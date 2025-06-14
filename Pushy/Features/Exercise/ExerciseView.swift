@@ -102,7 +102,8 @@ struct ExerciseView: View {
                 ExerciseSet(weight: 15.0, reps: 5, restTime: 60),
                 ExerciseSet(weight: 17.5, reps: 5, restTime: 90),
                 ExerciseSet(weight: 20.0, reps: 5, restTime: 120)
-            ]
+            ],
+            isRestTimerEnabled: true
         )
     )
 }
