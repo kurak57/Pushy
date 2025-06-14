@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ExerciseView: View {
+    @Binding var isPresented: Bool
     //    @StateObject private var viewModel = ExerciseViewModel()
 
     var body: some View {
@@ -53,6 +54,7 @@ struct ExerciseView: View {
 
             HStack {
                 Button(action: {
+                    self.isPresented.toggle()
                 }) {
                     Image(systemName: "multiply")
                         .font(.system(size: 32))
@@ -102,5 +104,5 @@ struct ExerciseView: View {
 }
 
 #Preview {
-    ExerciseView()
+    ExerciseView(isPresented: .constant(true))
 }
