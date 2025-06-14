@@ -9,17 +9,32 @@ import SwiftUI
 
 struct ExerciseView: View {
     @Binding var isPresented: Bool
+    let configuration: ExerciseConfiguration
     @State private var countdown: Int? = nil
     @State private var isCountingDown = false
     @State private var isExerciseActive = false
     @State private var currentSet: Int = 0
-    @State private var totalSets: Int = 3
-    @State private var totalReps: Int = 5
     @State private var repetitionCount: Int = 0
     @State private var repTimer: Timer? = nil
     @State private var isSessionCompleted: Bool = false
-    @State private var exerciseWeight: Double = 15.0
-    //    @StateObject private var viewModel = ExerciseViewModel()
+    @State private var isResting = false
+    @State private var restTimeRemaining: Int = 0
+    @State private var restTimer: Timer? = nil
+
+    private var currentSetIndex: Int {
+        currentSet - 1
+    }
+    
+    private var isLastSet: Bool {
+        currentSet >= configuration.sets.count
+    }
+    
+    private var currentSetConfig: ExerciseSet? {
+        guard currentSetIndex >= 0, currentSetIndex < configuration.sets.count else {
+            return nil
+        }
+        return configuration.sets[currentSetIndex]
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -40,9 +55,8 @@ struct ExerciseView: View {
             TopControlButtons(isPresented: $isPresented, resetAction: resetExercise)
             
             if isExerciseActive && !isSessionCompleted {
-//                RepetitionCounterDisplay(repetitionCount: repetitionCount)
                 RepetitionCounterView(value: repetitionCount)
-                    .padding(.top, 70) // Adjust based on top buttons
+                    .padding(.top, 70)
             }
 
             GeometryReader { geo in
@@ -52,7 +66,24 @@ struct ExerciseView: View {
                     }
                     
                     if !isSessionCompleted {
-                        GoalsInfoDisplay(currentSet: currentSet, totalSets: totalSets, totalReps: totalReps, weight: exerciseWeight)
+                        if isResting {
+                            VStack(spacing: 16) {
+                                Text("Rest Time")
+                                    .font(.title2)
+                                    .foregroundColor(.white)
+                                Text("\(restTimeRemaining)s")
+                                    .font(.system(size: 48, weight: .bold))
+                                    .foregroundColor(.cyan)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else if let currentConfig = currentSetConfig {
+                            GoalsInfoDisplay(
+                                currentSet: currentSet,
+                                totalSets: configuration.sets.count,
+                                totalReps: currentConfig.reps,
+                                weight: currentConfig.weight
+                            )
+                        }
                     }
                     
                     if let count = countdown {
@@ -61,12 +92,13 @@ struct ExerciseView: View {
                     
                     if isSessionCompleted {
                         SessionCompletedView(
-                            totalSets: totalSets,
-                            totalReps: totalReps,
+                            totalSets: configuration.sets.count,
+                            totalReps: configuration.sets.reduce(0) { $0 + $1.reps },
                             dismissAction: { self.isPresented = false }
                         )
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .onAppear {
@@ -85,31 +117,23 @@ struct ExerciseView: View {
                     }
                 }
             } else {
-                if currentSet < totalSets {
+                if !isLastSet {
                     isExerciseActive = true
                     currentSet += 1
                     startRepetitionCounter()
                 }
             }
         }
-        .onChange(of: isExerciseActive) { _, newValue in
-            if newValue && !isSessionCompleted {
-                // Do nothing here, startRepetitionCounter is called after countdown finishes for each set
-            } else {
-                stopRepetitionCounter()
-            }
-        }
         .onChange(of: repetitionCount) { _, newValue in
-            if newValue >= totalReps {
+            guard let currentConfig = currentSetConfig else { return }
+            
+            if newValue >= currentConfig.reps {
                 stopRepetitionCounter()
-                if currentSet >= totalSets {
+                if isLastSet {
                     isExerciseActive = false
                     isSessionCompleted = true
                 } else {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                        repetitionCount = 0
-                        startCountdown()
-                    }
+                    startRestTimer()
                 }
             }
         }
@@ -130,12 +154,33 @@ struct ExerciseView: View {
     }
     
     func startRepetitionCounter() {
+        guard let currentConfig = currentSetConfig else { return }
+        
         repTimer?.invalidate()
         repTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
-            if repetitionCount < totalReps {
+            if repetitionCount < currentConfig.reps {
                 repetitionCount += 1
             } else {
                 repTimer?.invalidate()
+            }
+        }
+    }
+    
+    func startRestTimer() {
+        guard let currentConfig = currentSetConfig else { return }
+        
+        isResting = true
+        restTimeRemaining = currentConfig.restTime
+        
+        restTimer?.invalidate()
+        restTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
+            if restTimeRemaining > 0 {
+                restTimeRemaining -= 1
+            } else {
+                timer.invalidate()
+                isResting = false
+                repetitionCount = 0
+                startCountdown()
             }
         }
     }
@@ -145,28 +190,30 @@ struct ExerciseView: View {
         repTimer = nil
     }
     
-    func finishExercise() {
-        repTimer?.invalidate()
-        repTimer = nil
-        isExerciseActive = false
-        isSessionCompleted = false
-        countdown = nil
-        repetitionCount = 0
-        currentSet = 0
-    }
-    
     func resetExercise() {
         repTimer?.invalidate()
         repTimer = nil
+        restTimer?.invalidate()
+        restTimer = nil
         isExerciseActive = false
         isSessionCompleted = false
+        isResting = false
         countdown = nil
         repetitionCount = 0
         currentSet = 0
-        // Optionally, reset other exercise-specific states here if needed
     }
 }
 
 #Preview {
-    ExerciseView(isPresented: .constant(true))
+    ExerciseView(
+        isPresented: .constant(true),
+        configuration: ExerciseConfiguration(
+            exerciseName: "Bicep Curl",
+            sets: [
+                ExerciseSet(weight: 15.0, reps: 5, restTime: 60),
+                ExerciseSet(weight: 17.5, reps: 5, restTime: 90),
+                ExerciseSet(weight: 20.0, reps: 5, restTime: 120)
+            ]
+        )
+    )
 }

@@ -8,14 +8,29 @@
 
 import SwiftUI
 
+struct ExerciseSet {
+    var weight: Double
+    var reps: Int
+    var restTime: Int // in seconds
+}
+
+struct ExerciseConfiguration {
+    var exerciseName: String
+    var sets: [ExerciseSet]
+}
 
 struct ConfigurationView: View {
-    let onStartWorkout: () -> Void
+    let onStartWorkout: (ExerciseConfiguration) -> Void
+    @State private var configuration = ExerciseConfiguration(
+        exerciseName: "Bicep Curl",
+        sets: [ExerciseSet(weight: 15.0, reps: 5, restTime: 60)]
+    )
+    @State private var isRestTimerEnabled = true
     
     var body: some View {
         VStack() {
             // Title
-            Text("Bicep Curl")
+            Text(configuration.exerciseName)
                 .font(.title)
                 .fontWeight(.semibold)
                 .foregroundColor(.white)
@@ -39,10 +54,10 @@ struct ConfigurationView: View {
             .frame(maxWidth: .infinity, minHeight: 200, maxHeight: 200, alignment: .center)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.gray.opacity(0.4), lineWidth: 1) // Rounded border
+                    .stroke(Color.gray.opacity(0.4), lineWidth: 1)
             )
             
-            // Notes field (just a placeholder for now)
+            // Notes field
             HStack {
                 Text("Add routine notes here")
                     .font(.system(size: 17, weight: .semibold, design: .default))
@@ -50,12 +65,15 @@ struct ConfigurationView: View {
                 Spacer()
             }
             
-            // Rest Timer
+            // Rest Timer Toggle
             HStack {
                 Image(systemName: "alarm")
                     .foregroundColor(.cyan)
-                Text("Rest Timer: OFF")
+                Text("Rest Timer:")
                     .foregroundColor(.cyan)
+                
+                Toggle("", isOn: $isRestTimerEnabled)
+                    .toggleStyle(SwitchToggleStyle(tint: .cyan))
                 
                 Spacer()
             }
@@ -64,7 +82,7 @@ struct ConfigurationView: View {
             .font(.system(size: 17, weight: .bold, design: .default))
             .frame(maxWidth: .infinity, alignment: .leading)
             
-            // Set/Weight/Reps Headers
+            // Set/Weight/Reps/Rest Headers
             VStack {
                 HStack {
                     Text("SET")
@@ -73,33 +91,50 @@ struct ConfigurationView: View {
                     Spacer()
                     Text("REPS")
                     Spacer()
+                    if isRestTimerEnabled {
+                        Text("REST")
+                        Spacer()
+                    }
                 }
                 .font(.system(size: 17, weight: .bold, design: .default))
                 .foregroundColor(.gray)
                 .padding(.bottom, 16)
                 
-                // First set row
-                HStack {
-                    
+                // Sets List
+                ForEach(Array(configuration.sets.enumerated()), id: \.offset) { index, set in
+                    HStack(alignment: .center, spacing: 24) {
+                        Text("\(index + 1)")
+                            .foregroundColor(.white)
+                        Spacer()
+                        TextField("Weight", value: $configuration.sets[index].weight, format: .number)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.center)
+                            .foregroundColor(.white)
+                        Spacer()
+                        TextField("Reps", value: $configuration.sets[index].reps, format: .number)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.center)
+                            .foregroundColor(.white)
+                        if isRestTimerEnabled {
+                            Spacer()
+                            TextField("Rest", value: $configuration.sets[index].restTime, format: .number)
+                                .keyboardType(.numberPad)
+                                .multilineTextAlignment(.center)
+                                .foregroundColor(.white)
+                                .frame(width: 60)
+                            Spacer()
+                        }
+                    }
+                    .font(.system(size: 20, weight: .semibold, design: .default))
+                    .padding(.horizontal)
+                    .frame(maxWidth: .infinity, alignment: .center)
                 }
-                HStack(alignment: .center, spacing: 24) {
-                    Text("1")
-                        .foregroundColor(.white)
-                    Spacer()
-                    Text("-")
-                        .foregroundColor(.gray)
-                    Spacer()
-                    Text("-")
-                        .foregroundColor(.gray)
-                    Spacer()
-                }
-                .font(.system(size: 20, weight: .semibold, design: .default))
-                .padding(.horizontal)
-                .frame(maxWidth: .infinity, alignment:. center)
             }
             
             // Add set button
-            Button(action: {}) {
+            Button(action: {
+                configuration.sets.append(ExerciseSet(weight: 15.0, reps: 5, restTime: 60))
+            }) {
                 HStack {
                     Image(systemName: "plus")
                         .bold()
@@ -115,7 +150,7 @@ struct ConfigurationView: View {
             VStack {
                 Spacer()
                 
-                Button(action: onStartWorkout) {
+                Button(action: { onStartWorkout(configuration) }) {
                     Text("Start Workout")
                         .foregroundColor(.black)
                         .fontWeight(.semibold)
