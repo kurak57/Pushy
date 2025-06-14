@@ -10,18 +10,18 @@ struct TopControlButtons: View {
                 self.isPresented.toggle()
             }) {
                 Image(systemName: "multiply")
-                    .font(.system(size: 32))
+                    .font(.system(size: 24))
                     .foregroundStyle(.white)
-                    .padding(12)
+                    .padding(8)
                     .background(Color.black.opacity(0.5))
                     .clipShape(Circle())
             }
             Spacer()
             Button(action: resetAction) {
                 Image(systemName: "arrow.counterclockwise")
-                    .font(.system(size: 32))
+                    .font(.system(size: 24))
                     .foregroundStyle(.white)
-                    .padding(12)
+                    .padding(8)
                     .background(Color.black.opacity(0.5))
                     .clipShape(Circle())
             }
@@ -29,9 +29,9 @@ struct TopControlButtons: View {
                 // Speaker action
             }) {
                 Image(systemName: "speaker.wave.2")
-                    .font(.system(size: 32))
+                    .font(.system(size: 24))
                     .foregroundStyle(.white)
-                    .padding(12)
+                    .padding(8)
                     .background(Color.black.opacity(0.5))
                     .clipShape(Circle())
             }
