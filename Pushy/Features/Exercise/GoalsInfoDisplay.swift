@@ -4,6 +4,7 @@ struct GoalsInfoDisplay: View {
     let currentSet: Int
     let totalSets: Int
     let totalReps: Int
+    let weight: Double
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -13,6 +14,8 @@ struct GoalsInfoDisplay: View {
             Text("Set : \(currentSet)/\(totalSets)")
                 .font(.subheadline)
             Text("Rep : \(totalReps)")
+                .font(.subheadline)
+            Text("Weight: \(weight, specifier: "%.1f") kg")
                 .font(.subheadline)
         }
         .foregroundColor(.white)
@@ -26,5 +29,5 @@ struct GoalsInfoDisplay: View {
 }
 
 #Preview {
-    GoalsInfoDisplay(currentSet: 1, totalSets: 3, totalReps: 5)
+    GoalsInfoDisplay(currentSet: 1, totalSets: 3, totalReps: 5, weight: 10.5)
 } 

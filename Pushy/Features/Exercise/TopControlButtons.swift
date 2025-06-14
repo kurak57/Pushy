@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TopControlButtons: View {
     @Binding var isPresented: Bool
+    let resetAction: () -> Void
 
     var body: some View {
         HStack {
@@ -16,6 +17,14 @@ struct TopControlButtons: View {
                     .clipShape(Circle())
             }
             Spacer()
+            Button(action: resetAction) {
+                Image(systemName: "arrow.counterclockwise")
+                    .font(.system(size: 32))
+                    .foregroundStyle(.white)
+                    .padding(12)
+                    .background(Color.black.opacity(0.5))
+                    .clipShape(Circle())
+            }
             Button(action: {
                 // Speaker action
             }) {
@@ -33,5 +42,5 @@ struct TopControlButtons: View {
 }
 
 #Preview {
-    TopControlButtons(isPresented: .constant(true))
+    TopControlButtons(isPresented: .constant(true), resetAction: { })
 } 

@@ -7,34 +7,34 @@ struct SessionCompletedView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("Session completed")
+            Text("Session\ncompleted")
                 .font(.largeTitle)
+                .multilineTextAlignment(.center)
                 .bold()
                 .foregroundColor(.white)
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 100))
-                .foregroundColor(Color.green)
+            Image("Check")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 225, height: 225)
             Text("Goals")
-                .font(.headline)
+                .font(.title2)
+                .bold()
                 .foregroundColor(.gray)
             Text("\(totalSets) sets of \(totalReps) repetitions")
-                .font(.title2)
+                .font(.title)
+                .bold()
                 .foregroundColor(.white)
-            Button(action: dismissAction) {
-                Text("Done")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.blue)
-                    .cornerRadius(10)
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                dismissAction()
             }
-            .padding(.horizontal)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.black.opacity(0.8))
+        .background(LinearGradient(gradient: Gradient(colors: [Color(red: 0.25, green: 0.1, blue: 0.4), Color(red: 0, green: 0, blue: 0), Color(red: 0.1, green: 0.3, blue: 0.25)]), startPoint: .top, endPoint: .bottom))
         .ignoresSafeArea()
     }
+        
 }
 
 #Preview {

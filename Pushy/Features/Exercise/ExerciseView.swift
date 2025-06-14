@@ -18,6 +18,7 @@ struct ExerciseView: View {
     @State private var repetitionCount: Int = 0
     @State private var repTimer: Timer? = nil
     @State private var isSessionCompleted: Bool = false
+    @State private var exerciseWeight: Double = 15.0
     //    @StateObject private var viewModel = ExerciseViewModel()
 
     var body: some View {
@@ -36,7 +37,7 @@ struct ExerciseView: View {
             )
             .ignoresSafeArea()
 
-            TopControlButtons(isPresented: $isPresented)
+            TopControlButtons(isPresented: $isPresented, resetAction: resetExercise)
             
             if isExerciseActive && !isSessionCompleted {
                 RepetitionCounterDisplay(repetitionCount: repetitionCount)
@@ -49,15 +50,11 @@ struct ExerciseView: View {
                     }
                     
                     if !isSessionCompleted {
-                        GoalsInfoDisplay(currentSet: currentSet, totalSets: totalSets, totalReps: totalReps)
+                        GoalsInfoDisplay(currentSet: currentSet, totalSets: totalSets, totalReps: totalReps, weight: exerciseWeight)
                     }
                     
                     if let count = countdown {
                         CountdownDisplay(count: count, isCountingDown: isCountingDown)
-                    }
-                    
-                    if isExerciseActive && !isSessionCompleted {
-                        ExerciseControlButtons(finishAction: finishExercise)
                     }
                     
                     if isSessionCompleted {
@@ -109,7 +106,7 @@ struct ExerciseView: View {
                 } else {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                         repetitionCount = 0
-                        startCountdown() // Restart countdown for the next set
+                        startCountdown()
                     }
                 }
             }
@@ -154,6 +151,17 @@ struct ExerciseView: View {
         countdown = nil
         repetitionCount = 0
         currentSet = 0
+    }
+    
+    func resetExercise() {
+        repTimer?.invalidate()
+        repTimer = nil
+        isExerciseActive = false
+        isSessionCompleted = false
+        countdown = nil
+        repetitionCount = 0
+        currentSet = 0
+        // Optionally, reset other exercise-specific states here if needed
     }
 }
 
