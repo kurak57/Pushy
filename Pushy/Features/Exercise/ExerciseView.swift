@@ -15,14 +15,17 @@ struct ExerciseView: View {
     @State private var currentSet: Int = 0
     @State private var totalSets: Int = 3
     @State private var totalReps: Int = 5
+    // TODO:: Update repetitionCount nya ketika gerakannya benar
     @State private var repetitionCount: Int = 0
     @State private var repTimer: Timer? = nil
     @State private var isSessionCompleted: Bool = false
     @State private var exerciseWeight: Double = 15.0
+    // TODO:: Ini View Model Nya
     //    @StateObject private var viewModel = ExerciseViewModel()
 
     var body: some View {
         ZStack(alignment: .top) {
+            // TODO:: Panggil View Camera Nya Disini
             LinearGradient(
                 gradient: Gradient(colors: [
                     Color.black.opacity(0.7),
