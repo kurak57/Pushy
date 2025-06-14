@@ -9,7 +9,9 @@ import SwiftUI
 
 struct OnboardingView: View {
     @Binding var showOnboarding: Bool
+    @Binding var startExercise: Bool
     @State private var currentIndex = 0
+    
 
     var body: some View {
         VStack {
@@ -84,9 +86,16 @@ struct OnboardingView: View {
 
                 // Next Button
                 Button(action: {
+
                     if currentIndex < onboardingModel.count - 1 {
                         currentIndex += 1
                     }
+
+                    if currentIndex == onboardingModel.count - 1{
+                        startExercise = true
+
+                    }
+                    
                 }) {
                     Text("Next")
                         .fontWeight(.bold)
@@ -108,6 +117,6 @@ struct OnboardingView: View {
 
 struct OnboardingView_Previews: PreviewProvider {
     static var previews: some View {
-        OnboardingView(showOnboarding: .constant(true))
+        OnboardingView(showOnboarding: .constant(true), startExercise: .constant(false))
     }
 }
