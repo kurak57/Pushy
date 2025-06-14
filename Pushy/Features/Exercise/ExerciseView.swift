@@ -40,7 +40,9 @@ struct ExerciseView: View {
             TopControlButtons(isPresented: $isPresented, resetAction: resetExercise)
             
             if isExerciseActive && !isSessionCompleted {
-                RepetitionCounterDisplay(repetitionCount: repetitionCount)
+//                RepetitionCounterDisplay(repetitionCount: repetitionCount)
+                RepetitionCounterView(value: repetitionCount)
+                    .padding(.top, 70) // Adjust based on top buttons
             }
 
             GeometryReader { geo in
