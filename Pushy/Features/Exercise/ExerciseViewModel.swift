@@ -117,12 +117,12 @@ class ExerciseViewModel: ObservableObject {
     }
 
     private func processCurl(side: Side, pose: Pose) -> Bool {
-        // choose keys
+        // choose joint names
         let shoulderKey: VNHumanBodyPoseObservation.JointName = (side == .left) ? .leftShoulder : .rightShoulder
         let elbowKey:    VNHumanBodyPoseObservation.JointName = (side == .left) ? .leftElbow    : .rightElbow
         let wristKey:    VNHumanBodyPoseObservation.JointName = (side == .left) ? .leftWrist    : .rightWrist
 
-        // get angle using three‑point helper
+        // get angle
         guard let rawAngle = elbowAngleDegrees(from: pose,
                                                shoulder: shoulderKey,
                                                elbow: elbowKey,
@@ -137,34 +137,36 @@ class ExerciseViewModel: ObservableObject {
         }
         let smoothed = buffer.reduce(0, +) / Double(buffer.count)
         recentAngles[side] = buffer
-        print(smoothed)
 
         if side == .right { currentAngle = smoothed }
 
-        // state machine
+        // state machine: count on up-transition
         var didRep = false
         if !isUp[side]! && !isDown[side]! {
-            if smoothed <= upAngleThreshold + angleHysteresis {
+            // initialize based on current pose
+            if smoothed >= downAngleThreshold - angleHysteresis {
+                isDown[side] = true
+            } else if smoothed <= upAngleThreshold + angleHysteresis {
                 isUp[side] = true
-            } else if smoothed >= downAngleThreshold - angleHysteresis {
+            }
+        } else if isUp[side]! {
+            // moving from up to down
+            if smoothed >= downAngleThreshold {
+                isUp[side] = false
                 isDown[side] = true
             }
         } else if isDown[side]! {
+            // moving from down to up => count rep
             if smoothed <= upAngleThreshold {
                 isDown[side] = false
-                isUp[side]   = true
-            }
-        } else if isUp[side]! {
-            if smoothed >= downAngleThreshold {
-                isUp[side]   = false
-                isDown[side] = true
+                isUp[side] = true
                 didRep = true
             }
         }
         return didRep
     }
 
-    // MARK: –– Helper for three‑point angle
+    // Helper for three-point angle
     private func validKeypoints(
         _ joints: [VNHumanBodyPoseObservation.JointName],
         in pose: Pose
