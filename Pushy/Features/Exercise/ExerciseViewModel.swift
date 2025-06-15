@@ -2,45 +2,77 @@ import Foundation
 import Vision
 import Combine
 import UIKit
+import SwiftUI
 
 @MainActor
 class ExerciseViewModel: ObservableObject {
+    // MARK: - ML State
     @Published var actionLabel: String = "Observing..."
     @Published var confidenceLabel: String = "Observing..."
     @Published var renderedImage: UIImage?
     @Published var repCount: Int = 0
     @Published var currentAngle: Double = 0.0
-
+    
+    // MARK: - UI State
+    @Published var countdown: Int?
+    @Published var isCountingDown = false
+    @Published var isExerciseActive = false
+    @Published var currentSet: Int = 0
+    @Published var isSessionCompleted = false
+    @Published var isResting = false
+    @Published var restTimeRemaining: Int = 0
+    
+    // MARK: - Private Properties
     private var videoCapture: VideoCapture!
     private var videoProcessingChain: VideoProcessingChain!
     private var cancellables = Set<AnyCancellable>()
+    private var actionFrameCounts = [String: Int]()
+    private var restTimer: Timer?
+    private let configuration: ExerciseConfiguration
     
-    var actionFrameCounts = [String: Int]()
-    
-    // MARK: –– Per‑arm rep‑counting state
+    // MARK: - Per‑arm rep‑counting state
     private enum Side { case left, right }
     private var isUp = [Side.left: false, .right: false]
     private var isDown = [Side.left: false, .right: false]
     private var recentAngles = [Side.left: [Double](), .right: [Double]()]
     
-    // thresholds
+    // MARK: - Thresholds
     private let upAngleThreshold: Double = 70.0    // bicep fully curled
     private let downAngleThreshold: Double = 160.0 // arm extended
     private let angleHysteresis: Double = 10.0     // prevents bouncing
     private let angleHistoryCount = 5             // smoothing window
-
-    init() {
+    
+    // MARK: - Computed Properties
+    private var currentSetIndex: Int {
+        currentSet - 1
+    }
+    
+    private var isLastSet: Bool {
+        currentSet >= configuration.sets.count
+    }
+    
+    private var currentSetConfig: ExerciseSet? {
+        guard currentSetIndex >= 0, currentSetIndex < configuration.sets.count else {
+            return nil
+        }
+        return configuration.sets[currentSetIndex]
+    }
+    
+    // MARK: - Initialization
+    init(configuration: ExerciseConfiguration) {
+        self.configuration = configuration
         setupPipeline()
     }
-
-    deinit {
-        cancellables.removeAll()
-        videoCapture?.isEnabled = false
-        videoCapture = nil
-        videoProcessingChain = nil
-    }
-
+//    
+//    deinit {
+//        Task { @MainActor in
+//            cleanup()
+//        }
+//    }
+    
+    // MARK: - Public Methods
     func cleanup() {
+        stopAllTimers()
         videoCapture?.isEnabled = false
         cancellables.removeAll()
     }
@@ -48,32 +80,151 @@ class ExerciseViewModel: ObservableObject {
     func setupPipeline() {
         videoProcessingChain = VideoProcessingChain()
         videoProcessingChain.delegate = self
-
+        
         videoCapture = VideoCapture()
         videoCapture.delegate = self
     }
-
+    
     func toggleCamera() {
         videoCapture.toggleCameraSelection()
     }
-
+    
     func updateOrientation() {
         videoCapture.updateDeviceOrientation()
     }
-
+    
     func stopCamera() {
         videoCapture.isEnabled = false
     }
-
+    
     func startCamera() {
         videoCapture.isEnabled = true
     }
     
-    func resetRepCount() {
+    func startExercise() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            self.startCountdown()
+        }
+    }
+    
+    func resetExercise() {
+        stopAllTimers()
+        isExerciseActive = false
+        isSessionCompleted = false
+        isResting = false
+        countdown = nil
         repCount = 0
+        currentSet = 0
+        resetRepCount()
+        
+        // Start the exercise again after a short delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.startExercise()
+        }
+    }
+    
+    // MARK: - Private Methods
+    private func resetRepCount() {
         isUp = [Side.left: false, .right: false]
         isDown = [Side.left: false, .right: false]
         recentAngles = [Side.left: [], .right: []]
+    }
+    
+    private func startCountdown() {
+        countdown = 3
+        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
+            guard let self = self else {
+                timer.invalidate()
+                return
+            }
+            
+            if let currentCount = self.countdown {
+                if currentCount > 0 {
+                    self.countdown = currentCount - 1
+                } else {
+                    timer.invalidate()
+                    self.countdown = nil
+                }
+            }
+        }
+    }
+    
+    
+    private func startRestTimer() {
+        guard let currentConfig = currentSetConfig else { return }
+        
+        isResting = true
+        restTimeRemaining = currentConfig.restTime
+        
+        restTimer?.invalidate()
+        restTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
+            guard let self = self else {
+                timer.invalidate()
+                return
+            }
+            
+            if self.restTimeRemaining > 0 {
+                self.restTimeRemaining -= 1
+            } else {
+                timer.invalidate()
+                self.isResting = false
+                self.repCount = 0
+                self.startCountdown()
+            }
+        }
+    }
+    
+    private func stopAllTimers() {
+        restTimer?.invalidate()
+        restTimer = nil
+    }
+    
+    // MARK: - State Updates
+    func handleCountdownChange() {
+        if countdown != nil {
+            withAnimation {
+                isCountingDown = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                withAnimation {
+                    self.isCountingDown = false
+                }
+            }
+        } else {
+            if !isLastSet {
+                isExerciseActive = true
+                currentSet += 1
+            }
+        }
+    }
+    
+    func handleRepetitionChange() {
+        guard let currentConfig = currentSetConfig else { return }
+        
+        if repCount >= currentConfig.reps {
+            stopAllTimers()
+            if isLastSet {
+                isExerciseActive = false
+                isSessionCompleted = true
+            } else {
+                if configuration.isRestTimerEnabled {
+                    startRestTimer()
+                } else {
+                    repCount = 0
+                    startCountdown()
+                }
+            }
+        }
+    }
+    
+    // MARK: - View Helpers
+    var currentSetInfo: (currentSet: Int, totalSets: Int, reps: Int, weight: Double)? {
+        guard let currentConfig = currentSetConfig else { return nil }
+        return (currentSet, configuration.sets.count, currentConfig.reps, currentConfig.weight)
+    }
+    
+    var totalReps: Int {
+        configuration.sets.reduce(0) { $0 + $1.reps }
     }
 
     private func updateUI(with prediction: ActionPrediction) {
@@ -111,8 +262,13 @@ class ExerciseViewModel: ObservableObject {
     private func calculateBicepCurlAngle(from pose: Pose) {
         let leftDidRep  = processCurl(side: .left,  pose: pose)
         let rightDidRep = processCurl(side: .right, pose: pose)
+        guard let currentConfig = currentSetConfig else { return }
+
         if leftDidRep || rightDidRep {
-            repCount += 1
+            
+            if self.repCount < currentConfig.reps {
+                self.repCount += 1
+            }
         }
     }
 

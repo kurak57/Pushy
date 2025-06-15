@@ -6,22 +6,12 @@ import SwiftUI
 
 struct ExerciseView: View {
     @Binding var isPresented: Bool
-    @StateObject private var viewModel: ExerciseViewModelUIOnly
+    @StateObject private var viewModel: ExerciseViewModel
     
     init(isPresented: Binding<Bool>, configuration: ExerciseConfiguration) {
         self._isPresented = isPresented
-        self._viewModel = StateObject(wrappedValue: ExerciseViewModelUIOnly(configuration: configuration))
+        self._viewModel = StateObject(wrappedValue: ExerciseViewModel(configuration: configuration))
     }
-    
-    @State private var countdown: Int? = nil
-    @State private var isCountingDown = false
-    @State private var isExerciseActive = false
-    @State private var currentSet: Int = 0
-    @State private var totalSets: Int = 3
-    @State private var totalReps: Int = 5
-    @State private var isSessionCompleted: Bool = false
-    @State private var exerciseWeight: Double = 15.0
-    @StateObject private var viewModel = ExerciseViewModel()
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -42,14 +32,9 @@ struct ExerciseView: View {
             )
             .ignoresSafeArea()
 
-            TopControlButtons(isPresented: $isPresented, resetAction: viewModel.resetExercise)
             
             if viewModel.isExerciseActive && !viewModel.isSessionCompleted {
-                RepetitionCounterView(value: viewModel.repetitionCount)
-                    .padding(.top, 70)
-            TopControlButtons(isPresented: $isPresented, resetAction: resetExercise)
-
-            if isExerciseActive && !isSessionCompleted {
+                TopControlButtons(isPresented: $isPresented, resetAction: viewModel.resetExercise)
                 RepetitionCounterDisplay(
                     repetitionCount: viewModel.repCount,
                     actionLabel: viewModel.actionLabel,
@@ -102,82 +87,17 @@ struct ExerciseView: View {
         }
         .onAppear {
             viewModel.startExercise()
+            viewModel.startCamera()
         }
         .onChange(of: viewModel.countdown) { _, _ in
             viewModel.handleCountdownChange()
         }
-        .onChange(of: viewModel.repetitionCount) { _, _ in
+        .onChange(of: viewModel.repCount) { _, _ in
             viewModel.handleRepetitionChange()
-            viewModel.startCamera()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                startCountdown()
-            }
         }
         .onDisappear {
             viewModel.stopCamera()
         }
-        .onChange(of: countdown) { _, newValue in
-            if newValue != nil {
-                withAnimation { isCountingDown = true }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                    withAnimation { isCountingDown = false }
-                }
-            } else {
-                if currentSet < totalSets {
-                    isExerciseActive = true
-                    currentSet += 1
-                    // ViewModel repCount will start incrementing automatically
-                }
-            }
-        }
-        .onChange(of: isExerciseActive) { _, newValue in
-            if newValue && !isSessionCompleted {
-                // Reset VM counter for new set
-                viewModel.resetRepCount()
-            }
-        }
-        .onChange(of: viewModel.repCount) { _, newValue in
-            if newValue >= totalReps {
-                isExerciseActive = false
-                if currentSet >= totalSets {
-                    isSessionCompleted = true
-                } else {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                        startCountdown()
-                    }
-                }
-            }
-        }
-    }
-
-    func startCountdown() {
-        countdown = 3
-        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
-            if let currentCount = countdown {
-                if currentCount > 0 {
-                    countdown = currentCount - 1
-                } else {
-                    timer.invalidate()
-                    countdown = nil
-                }
-            }
-        }
-    }
-
-    func finishExercise() {
-        isExerciseActive = false
-        isSessionCompleted = false
-        countdown = nil
-        currentSet = 0
-        viewModel.resetRepCount()
-    }
-
-    func resetExercise() {
-        isExerciseActive = false
-        isSessionCompleted = false
-        countdown = nil
-        currentSet = 0
-        viewModel.resetRepCount()
     }
 }
 
