@@ -1,7 +1,7 @@
 import SwiftUI
 
 @MainActor
-class ExerciseViewModel: ObservableObject {
+class ExerciseViewModelUIOnly: ObservableObject {
     // MARK: - Published Properties
     @Published var countdown: Int?
     @Published var isCountingDown = false

@@ -9,11 +9,11 @@ import SwiftUI
 
 struct ExerciseView: View {
     @Binding var isPresented: Bool
-    @StateObject private var viewModel: ExerciseViewModel
+    @StateObject private var viewModel: ExerciseViewModelUIOnly
     
     init(isPresented: Binding<Bool>, configuration: ExerciseConfiguration) {
         self._isPresented = isPresented
-        self._viewModel = StateObject(wrappedValue: ExerciseViewModel(configuration: configuration))
+        self._viewModel = StateObject(wrappedValue: ExerciseViewModelUIOnly(configuration: configuration))
     }
     
     var body: some View {
