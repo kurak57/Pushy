@@ -15,7 +15,7 @@ struct HomeView: View {
         sets: [
             
         ],
-        isRestTimerEnabled: true
+        restTime: 60
     )
     
     var body: some View {

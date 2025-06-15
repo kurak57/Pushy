@@ -151,10 +151,8 @@ class ExerciseViewModel: ObservableObject {
     
     
     private func startRestTimer() {
-        guard let currentConfig = currentSetConfig else { return }
-        
         isResting = true
-        restTimeRemaining = currentConfig.restTime
+        restTimeRemaining = configuration.restTime
         
         restTimer?.invalidate()
         restTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
@@ -207,12 +205,7 @@ class ExerciseViewModel: ObservableObject {
                 isExerciseActive = false
                 isSessionCompleted = true
             } else {
-                if configuration.isRestTimerEnabled {
-                    startRestTimer()
-                } else {
-                    repCount = 0
-                    startCountdown()
-                }
+                startRestTimer()
             }
         }
     }
