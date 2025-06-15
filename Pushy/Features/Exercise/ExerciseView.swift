@@ -1,10 +1,7 @@
-//
-//  ExerciseView.swift
-//  Pushy
-//
-//  Created by Mutakin on 13/06/25.
-//
-
+import Foundation
+import Vision
+import Combine
+import UIKit
 import SwiftUI
 
 struct ExerciseView: View {
@@ -15,17 +12,15 @@ struct ExerciseView: View {
     @State private var currentSet: Int = 0
     @State private var totalSets: Int = 3
     @State private var totalReps: Int = 5
-    // TODO:: Update repetitionCount nya ketika gerakannya benar
-    @State private var repetitionCount: Int = 0
-    @State private var repTimer: Timer? = nil
     @State private var isSessionCompleted: Bool = false
     @State private var exerciseWeight: Double = 15.0
-    // TODO:: Ini View Model Nya
-    //    @StateObject private var viewModel = ExerciseViewModel()
+    @StateObject private var viewModel = ExerciseViewModel()
 
     var body: some View {
         ZStack(alignment: .top) {
-            // TODO:: Panggil View Camera Nya Disini
+            CameraPreviewView(viewModel: viewModel)
+                .ignoresSafeArea()
+
             LinearGradient(
                 gradient: Gradient(colors: [
                     Color.black.opacity(0.7),
@@ -41,11 +36,14 @@ struct ExerciseView: View {
             .ignoresSafeArea()
 
             TopControlButtons(isPresented: $isPresented, resetAction: resetExercise)
-            
+
             if isExerciseActive && !isSessionCompleted {
-//                RepetitionCounterDisplay(repetitionCount: repetitionCount)
-                RepetitionCounterView(value: repetitionCount)
-                    .padding(.top, 70) // Adjust based on top buttons
+                RepetitionCounterDisplay(
+                    repetitionCount: viewModel.repCount,
+                    actionLabel: viewModel.actionLabel,
+                    confidenceLabel: viewModel.confidenceLabel
+                )
+                .padding(.bottom, 200)
             }
 
             GeometryReader { geo in
@@ -53,15 +51,20 @@ struct ExerciseView: View {
                     if countdown == nil && !isExerciseActive && !isSessionCompleted {
                         PositionGuideView(geo: geo)
                     }
-                    
+
                     if !isSessionCompleted {
-                        GoalsInfoDisplay(currentSet: currentSet, totalSets: totalSets, totalReps: totalReps, weight: exerciseWeight)
+                        GoalsInfoDisplay(
+                            currentSet: currentSet,
+                            totalSets: totalSets,
+                            totalReps: totalReps,
+                            weight: exerciseWeight
+                        )
                     }
-                    
+
                     if let count = countdown {
                         CountdownDisplay(count: count, isCountingDown: isCountingDown)
                     }
-                    
+
                     if isSessionCompleted {
                         SessionCompletedView(
                             totalSets: totalSets,
@@ -73,51 +76,48 @@ struct ExerciseView: View {
             }
         }
         .onAppear {
+            viewModel.startCamera()
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 startCountdown()
             }
         }
+        .onDisappear {
+            viewModel.stopCamera()
+        }
         .onChange(of: countdown) { _, newValue in
             if newValue != nil {
-                withAnimation {
-                    isCountingDown = true
-                }
+                withAnimation { isCountingDown = true }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                    withAnimation {
-                        isCountingDown = false
-                    }
+                    withAnimation { isCountingDown = false }
                 }
             } else {
                 if currentSet < totalSets {
                     isExerciseActive = true
                     currentSet += 1
-                    startRepetitionCounter()
+                    // ViewModel repCount will start incrementing automatically
                 }
             }
         }
         .onChange(of: isExerciseActive) { _, newValue in
             if newValue && !isSessionCompleted {
-                // Do nothing here, startRepetitionCounter is called after countdown finishes for each set
-            } else {
-                stopRepetitionCounter()
+                // Reset VM counter for new set
+                viewModel.resetRepCount()
             }
         }
-        .onChange(of: repetitionCount) { _, newValue in
+        .onChange(of: viewModel.repCount) { _, newValue in
             if newValue >= totalReps {
-                stopRepetitionCounter()
+                isExerciseActive = false
                 if currentSet >= totalSets {
-                    isExerciseActive = false
                     isSessionCompleted = true
                 } else {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                        repetitionCount = 0
                         startCountdown()
                     }
                 }
             }
         }
     }
-    
+
     func startCountdown() {
         countdown = 3
         Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
@@ -131,42 +131,46 @@ struct ExerciseView: View {
             }
         }
     }
-    
-    func startRepetitionCounter() {
-        repTimer?.invalidate()
-        repTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
-            if repetitionCount < totalReps {
-                repetitionCount += 1
+
+    func finishExercise() {
+        isExerciseActive = false
+        isSessionCompleted = false
+        countdown = nil
+        currentSet = 0
+        viewModel.resetRepCount()
+    }
+
+    func resetExercise() {
+        isExerciseActive = false
+        isSessionCompleted = false
+        countdown = nil
+        currentSet = 0
+        viewModel.resetRepCount()
+    }
+}
+
+struct CameraPreviewView: View {
+    @ObservedObject var viewModel: ExerciseViewModel
+
+    var body: some View {
+        ZStack {
+            Color.black
+            if let image = viewModel.renderedImage {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .clipped()
             } else {
-                repTimer?.invalidate()
+                VStack {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .tint(.white)
+                    Text("Loading Camera...")
+                        .foregroundColor(.white)
+                        .padding(.top)
+                }
             }
         }
-    }
-    
-    func stopRepetitionCounter() {
-        repTimer?.invalidate()
-        repTimer = nil
-    }
-    
-    func finishExercise() {
-        repTimer?.invalidate()
-        repTimer = nil
-        isExerciseActive = false
-        isSessionCompleted = false
-        countdown = nil
-        repetitionCount = 0
-        currentSet = 0
-    }
-    
-    func resetExercise() {
-        repTimer?.invalidate()
-        repTimer = nil
-        isExerciseActive = false
-        isSessionCompleted = false
-        countdown = nil
-        repetitionCount = 0
-        currentSet = 0
-        // Optionally, reset other exercise-specific states here if needed
     }
 }
 
