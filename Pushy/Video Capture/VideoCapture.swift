@@ -262,7 +262,7 @@ extension VideoCapture {
         }
         
         // Set video quality preset
-        captureSession.sessionPreset = .medium
+//        captureSession.sessionPreset = .medium
 
         return true
     }
