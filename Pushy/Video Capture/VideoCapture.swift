@@ -1,5 +1,5 @@
 /*
-See LICENSE folder for this sample’s licensing information.
+See LICENSE folder for this sample's licensing information.
 
 Abstract:
 Convenience class that configures the video capture session and
@@ -199,9 +199,8 @@ extension VideoCapture {
     /// - Tag: configureCaptureConnection
     private func configureCaptureConnection(_ input: AVCaptureDeviceInput?,
                                             _ output: AVCaptureVideoDataOutput?) -> Bool {
-
-        guard let input = input else { return false }
         guard let output = output else { return false }
+        guard let input = input else { return false }
 
         // Clear inputs and outputs from the capture session.
         captureSession.inputs.forEach(captureSession.removeInput)
@@ -251,8 +250,19 @@ extension VideoCapture {
             }
         }
 
-        // Discard newer frames if the app is busy with an earlier frame.
+        // Configure output settings
         output.alwaysDiscardsLateVideoFrames = true
+        
+        // Set a lower resolution to reduce processing load
+        let device = input.device
+        if device.isFocusModeSupported(.continuousAutoFocus) {
+            try? device.lockForConfiguration()
+            device.focusMode = .continuousAutoFocus
+            device.unlockForConfiguration()
+        }
+        
+        // Set video quality preset
+        captureSession.sessionPreset = .medium
 
         return true
     }
