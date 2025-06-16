@@ -47,6 +47,11 @@ class ExerciseViewModel: ObservableObject {
     private let angleHysteresis: Double = 10.0     // prevents bouncing
     private let angleHistoryCount = 5             // smoothing window
     
+    // MARK: - Constants
+    private let goodCurlLabel = "Good Bicep Curl"
+    private let minGoodCurlConfidence: Double = 0.8  // e.g. only count if ≥80%
+
+    
     // MARK: - Computed Properties
     private var currentSetIndex: Int {
         currentSet - 1
@@ -280,14 +285,18 @@ class ExerciseViewModel: ObservableObject {
     }
     
     private func calculateBicepCurlAngle(from pose: Pose) {
+        // geometric rep detection
         let leftDidRep  = processCurl(side: .left,  pose: pose)
         let rightDidRep = processCurl(side: .right, pose: pose)
         guard let currentConfig = currentSetConfig else { return }
 
-        if leftDidRep || rightDidRep {
-            
-            if self.repCount < currentConfig.reps {
-                self.repCount += 1
+        // only count if geometry AND model agrees it’s a “good” curl
+        let didGeometryRep = leftDidRep || rightDidRep
+        let isGoodCurl = (actionLabel == goodCurlLabel)
+
+        if didGeometryRep && isGoodCurl {
+            if repCount < currentConfig.reps {
+                repCount += 1
             }
         }
     }

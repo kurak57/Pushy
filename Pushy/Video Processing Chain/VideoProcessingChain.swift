@@ -192,23 +192,23 @@ extension VideoProcessingChain {
     /// The method also sends the frame and any poses in it to the delegate.
     /// - Tag: findPosesInFrame
     private func findPosesInFrame(_ frame: CGImage) -> [Pose]? {
-        // Create a request handler for the image.
-        let visionRequestHandler = VNImageRequestHandler(cgImage: frame)
+        let handler = VNImageRequestHandler(cgImage: frame, options: [:])
+        let request = VNDetectHumanBodyPoseRequest()               // ← new each time
 
-        // Use Vision to find human body poses in the frame.
-        do { try visionRequestHandler.perform([humanBodyPoseRequest]) } catch {
+        do {
+            try handler.perform([request])
+        } catch {
             assertionFailure("Human Pose Request failed: \(error)")
+            return nil
         }
 
-        let poses = Pose.fromObservations(humanBodyPoseRequest.results)
-
-        // Send the frame and poses, if any, to the delegate on the main queue.
+        let poses = Pose.fromObservations(request.results)        // use this one
         DispatchQueue.main.async {
             self.delegate?.videoProcessingChain(self, didDetect: poses, in: frame)
         }
-
         return poses
     }
+
 
     /// Returns the largest pose by area.
     /// - Parameter poses: A `Pose` array optional.
