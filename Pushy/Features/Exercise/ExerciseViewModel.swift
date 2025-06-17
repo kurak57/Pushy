@@ -76,7 +76,7 @@ class ExerciseViewModel: ObservableObject {
         self.configuration = configuration
         setupPipeline()
     }
-//    
+//
 //    deinit {
 //        Task { @MainActor in
 //            cleanup()
@@ -388,73 +388,66 @@ class ExerciseViewModel: ObservableObject {
     }
 
     private func checkPosition(from pose: Pose) {
-        // Get key points for position check
-        let leftShoulder = pose.landmarks.first(where: { $0.name == .leftShoulder })?.location
-        let rightShoulder = pose.landmarks.first(where: { $0.name == .rightShoulder })?.location
-        let leftHip = pose.landmarks.first(where: { $0.name == .leftHip })?.location
-        let rightHip = pose.landmarks.first(where: { $0.name == .rightHip })?.location
-        
-        guard let leftShoulder = leftShoulder,
-              let rightShoulder = rightShoulder,
-              let leftHip = leftHip,
-              let rightHip = rightHip else {
+        // Track right arm only (shoulder, elbow, wrist)
+        let shoulderKey: VNHumanBodyPoseObservation.JointName = .rightShoulder
+        let elbowKey:    VNHumanBodyPoseObservation.JointName = .rightElbow
+        let wristKey:    VNHumanBodyPoseObservation.JointName = .rightWrist
+
+        // Extract normalized points
+        guard
+            let sPoint = pose.landmarks.first(where: { $0.name == shoulderKey })?.location,
+            let ePoint = pose.landmarks.first(where: { $0.name == elbowKey })?.location,
+            let wPoint = pose.landmarks.first(where: { $0.name == wristKey })?.location
+        else {
+            correctPositionStartTime = nil
             isInCorrectPosition = false
-            positionFeedback = "Cannot detect body position"
+            positionFeedback = "Show your arm clearly"
             return
         }
-        
-        // Calculate angles for side view check
-        let shoulderAngle = calculateAngle(p1: leftShoulder, p2: rightShoulder)
-        let hipAngle = calculateAngle(p1: leftHip, p2: rightHip)
-        
-        // For side view, we want the shoulders and hips to be roughly horizontal (0 or 180 degrees)
-        // This is because in side view, the left and right points should be aligned horizontally
-        let isShouldersHorizontal = (abs(shoulderAngle) < 30) || (abs(shoulderAngle - 180) < 30)
-        let isHipsHorizontal = (abs(hipAngle) < 30) || (abs(hipAngle - 180) < 30)
-        
-        // Check if body is centered in frame
-        let isCentered = abs(leftShoulder.x - 0.5) < 0.2 && abs(rightShoulder.x - 0.5) < 0.2
-        
-        // Check if body is at appropriate distance (using shoulder width as reference)
-        let shoulderWidth = distance(leftShoulder, rightShoulder)
-        let isGoodDistance = shoulderWidth > 0.2 && shoulderWidth < 0.4
-        
-        isInCorrectPosition = isShouldersHorizontal && isHipsHorizontal && isCentered && isGoodDistance
-        
-        if !isInCorrectPosition {
-            if !isShouldersHorizontal || !isHipsHorizontal {
-                positionFeedback = "Turn your body to the side (shoulders: \(Int(shoulderAngle))°, hips: \(Int(hipAngle))°)"
-            } else if !isCentered {
-                positionFeedback = "Center your body in the frame"
-            } else if !isGoodDistance {
-                if shoulderWidth < 0.2 {
-                    positionFeedback = "Move closer to the camera"
-                } else {
-                    positionFeedback = "Move further from the camera"
-                }
+
+        // Convert to view coordinates (origin top-left)
+        func toView(_ p: CGPoint) -> CGPoint {
+            CGPoint(x: p.x, y: 1 - p.y)
+        }
+        let shoulder = toView(sPoint)
+        let elbow    = toView(ePoint)
+        let wrist    = toView(wPoint)
+
+        // Check horizontal guide band (e.g. center 60% of screen)
+        let minX: CGFloat = 0.2, maxX: CGFloat = 0.8
+        let inGuideBand = [shoulder.x, elbow.x, wrist.x].allSatisfy { $0 >= minX && $0 <= maxX }
+
+        // Check that upper-arm vector (shoulder->elbow) is roughly vertical
+        let vector = CGVector(dx: elbow.x - shoulder.x, dy: elbow.y - shoulder.y)
+        let rawAngle = atan2(vector.dy, vector.dx) * 180 / .pi
+        let sideOn = abs(abs(rawAngle) - 90) < 30
+
+        let now = CACurrentMediaTime()
+        if inGuideBand && sideOn {
+            if correctPositionStartTime == nil {
+                correctPositionStartTime = now
+                positionFeedback = "Hold still for \(Int(requiredPositionHoldTime))s to start"
             }
+            let elapsed = now - (correctPositionStartTime ?? now)
+            if elapsed >= requiredPositionHoldTime {
+                positionFeedback = "Starting exercise..."
+                if !isExerciseActive && !isCountingDown {
+                    startCountdown()
+                }
+            } else {
+                let remaining = Int(ceil(requiredPositionHoldTime - elapsed))
+                positionFeedback = "Hold still for \(remaining)s to start"
+            }
+            isInCorrectPosition = true
         } else {
-            let currentTime = CACurrentMediaTime()
-            
-            if !wasInCorrectPosition {
-                // Just entered correct position
-                correctPositionStartTime = currentTime
-                wasInCorrectPosition = true
-                positionFeedback = "Perfect position! Hold for 2 seconds to start"
-            } else if let startTime = correctPositionStartTime {
-                let timeInPosition = currentTime - startTime
-                if timeInPosition >= requiredPositionHoldTime {
-                    positionFeedback = "Starting exercise..."
-                    if !isExerciseActive && !isCountingDown {
-                        startCountdown()
-                    }
-                } else {
-                    let remainingTime = Int(ceil(requiredPositionHoldTime - timeInPosition))
-                    positionFeedback = "Perfect position! Hold for \(remainingTime) seconds to start"
-                }
-            }
+            correctPositionStartTime = nil
+            isInCorrectPosition = false
+            positionFeedback = !inGuideBand ?
+                "Move your arm into the guide" :
+                "Turn sideways so your arm is vertical"
         }
     }
+
     
     private func calculateAngle(p1: CGPoint, p2: CGPoint) -> Double {
         let dx = p2.x - p1.x
