@@ -160,6 +160,7 @@ public class ExerciseViewModel: ObservableObject {
     
     private func startCountdown() {
         countdown = 3
+        isCountingDown = true
         Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
             guard let self = self else {
                 timer.invalidate()
@@ -172,6 +173,7 @@ public class ExerciseViewModel: ObservableObject {
                         self.countdown = currentCount - 1
                     } else {
                         timer.invalidate()
+                        self.isCountingDown = false
                         self.countdown = nil
                     }
                 }
@@ -210,20 +212,9 @@ public class ExerciseViewModel: ObservableObject {
     
     // MARK: - State Updates
     func handleCountdownChange() {
-        if countdown != nil {
-            withAnimation {
-                isCountingDown = true
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                withAnimation {
-                    self.isCountingDown = false
-                }
-            }
-        } else {
-            if !isLastSet {
+        if !isLastSet && countdown == nil {
                 isExerciseActive = true
                 currentSet += 1
-            }
         }
     }
     
