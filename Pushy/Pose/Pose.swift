@@ -73,11 +73,10 @@ struct Pose {
         let scale = drawingScale
 
         // Draw the connection lines first.
-        connections.forEach {
-            line in line.drawToContext(context,
-                                       applying: transform,
-                                       at: scale)
-
+        connections.forEach { line in
+            line.drawToContext(context,
+                               applying: transform,
+                               at: scale)
         }
 
         // Draw the landmarks on top of the lines' endpoints.

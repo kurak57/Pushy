@@ -5,13 +5,14 @@ import UIKit
 import SwiftUI
 
 @MainActor
-class ExerciseViewModel: ObservableObject {
+public class ExerciseViewModel: ObservableObject {
     // MARK: - ML State
     @Published var actionLabel: String = "Observing..."
     @Published var confidenceLabel: String = "Observing..."
     @Published var renderedImage: UIImage?
     @Published var repCount: Int = 0
     @Published var currentAngle: Double = 0.0
+    @Published var currentArmpitAngle: Double = 0.0
     
     // MARK: - UI State
     @Published var countdown: Int?
@@ -23,6 +24,7 @@ class ExerciseViewModel: ObservableObject {
     @Published var restTimeRemaining: Int = 0
     @Published var isInCorrectPosition = false
     @Published var positionFeedback = "Position yourself in the guide"
+    @Published var formFeedback = ""
     
     // MARK: - Private Properties
     private var videoCapture: VideoCapture?
@@ -43,12 +45,17 @@ class ExerciseViewModel: ObservableObject {
     private var isUp = [Side.left: false, .right: false]
     private var isDown = [Side.left: false, .right: false]
     private var recentAngles = [Side.left: [Double](), .right: [Double]()]
+    private var recentArmpitAngles = [Side.left: [Double](), .right: [Double]()]
     
     // MARK: - Thresholds
     private let upAngleThreshold: Double = 70.0    // bicep fully curled
     private let downAngleThreshold: Double = 160.0 // arm extended
     private let angleHysteresis: Double = 10.0     // prevents bouncing
     private let angleHistoryCount = 5             // smoothing window
+    
+    // NEW: Armpit angle thresholds
+    private let maxArmpitAngle: Double = 45.0     // max degrees elbow can be away from torso
+    private let armpitAngleHysteresis: Double = 5.0
     
     // MARK: - Constants
     private let goodCurlLabel = "Good Bicep Curl"
@@ -83,12 +90,6 @@ class ExerciseViewModel: ObservableObject {
         self.configuration = configuration
         setupPipeline()
     }
-//
-//    deinit {
-//        Task { @MainActor in
-//            cleanup()
-//        }
-//    }
     
     // MARK: - Public Methods
     func cleanup() {
@@ -154,6 +155,7 @@ class ExerciseViewModel: ObservableObject {
         isUp = [Side.left: false, .right: false]
         isDown = [Side.left: false, .right: false]
         recentAngles = [Side.left: [], .right: []]
+        recentArmpitAngles = [Side.left: [], .right: []]
     }
     
     private func startCountdown() {
@@ -164,17 +166,18 @@ class ExerciseViewModel: ObservableObject {
                 return
             }
             
-            if let currentCount = self.countdown {
-                if currentCount > 0 {
-                    self.countdown = currentCount - 1
-                } else {
-                    timer.invalidate()
-                    self.countdown = nil
+            Task { @MainActor in
+                if let currentCount = self.countdown {
+                    if currentCount > 0 {
+                        self.countdown = currentCount - 1
+                    } else {
+                        timer.invalidate()
+                        self.countdown = nil
+                    }
                 }
             }
         }
     }
-    
     
     private func startRestTimer() {
         isResting = true
@@ -187,13 +190,15 @@ class ExerciseViewModel: ObservableObject {
                 return
             }
             
-            if self.restTimeRemaining > 0 {
-                self.restTimeRemaining -= 1
-            } else {
-                timer.invalidate()
-                self.isResting = false
-                self.repCount = 0
-                self.startCountdown()
+            Task { @MainActor in
+                if self.restTimeRemaining > 0 {
+                    self.restTimeRemaining -= 1
+                } else {
+                    timer.invalidate()
+                    self.isResting = false
+                    self.repCount = 0
+                    self.startCountdown()
+                }
             }
         }
     }
@@ -305,7 +310,7 @@ class ExerciseViewModel: ObservableObject {
     
     private func calculateBicepCurlAngle(from pose: Pose) {
         // geometric rep detection
-        let leftDidRep  = processCurl(side: .left,  pose: pose)
+        let leftDidRep  = processCurl(side: .left, pose: pose)
         let rightDidRep = processCurl(side: .right, pose: pose)
         guard let currentConfig = currentSetConfig else { return }
 
@@ -323,57 +328,112 @@ class ExerciseViewModel: ObservableObject {
     private func processCurl(side: Side, pose: Pose) -> Bool {
         // choose joint names
         let shoulderKey: VNHumanBodyPoseObservation.JointName = (side == .left) ? .leftShoulder : .rightShoulder
-        let elbowKey:    VNHumanBodyPoseObservation.JointName = (side == .left) ? .leftElbow    : .rightElbow
-        let wristKey:    VNHumanBodyPoseObservation.JointName = (side == .left) ? .leftWrist    : .rightWrist
+        let elbowKey: VNHumanBodyPoseObservation.JointName = (side == .left) ? .leftElbow : .rightElbow
+        let wristKey: VNHumanBodyPoseObservation.JointName = (side == .left) ? .leftWrist : .rightWrist
 
-        // get angle
-        guard let rawAngle = elbowAngleDegrees(from: pose,
-                                               shoulder: shoulderKey,
-                                               elbow: elbowKey,
-                                               wrist: wristKey)
+        // get elbow angle (shoulder-elbow-wrist)
+        guard let rawElbowAngle = elbowAngleDegrees(from: pose,
+                                                   shoulder: shoulderKey,
+                                                   elbow: elbowKey,
+                                                   wrist: wristKey)
         else { return false }
 
-        // smooth
-        guard var buffer = recentAngles[side] else {
-            return false
+        // NEW: get armpit angle (torso-shoulder-elbow)
+        guard let rawArmpitAngle = armpitAngleDegrees(from: pose, side: side)
+        else { return false }
+
+        // smooth elbow angles
+        guard var elbowBuffer = recentAngles[side] else { return false }
+        elbowBuffer.append(rawElbowAngle)
+        if elbowBuffer.count > angleHistoryCount {
+            elbowBuffer.removeFirst()
+        }
+        let smoothedElbowAngle = elbowBuffer.reduce(0, +) / Double(elbowBuffer.count)
+        recentAngles[side] = elbowBuffer
+
+        // smooth armpit angles
+        guard var armpitBuffer = recentArmpitAngles[side] else { return false }
+        armpitBuffer.append(rawArmpitAngle)
+        if armpitBuffer.count > angleHistoryCount {
+            armpitBuffer.removeFirst()
+        }
+        let smoothedArmpitAngle = armpitBuffer.reduce(0, +) / Double(armpitBuffer.count)
+        recentArmpitAngles[side] = armpitBuffer
+
+        if side == .right {
+            currentAngle = smoothedElbowAngle
+            currentArmpitAngle = smoothedArmpitAngle
         }
 
-        buffer.append(rawAngle)
-        if buffer.count > angleHistoryCount {
-            buffer.removeFirst()
+        // NEW: Check if armpit angle is acceptable throughout the movement
+        let isArmpitAngleGood = smoothedArmpitAngle <= maxArmpitAngle + armpitAngleHysteresis
+        
+        // Update form feedback
+        if !isArmpitAngleGood {
+            formFeedback = "Keep your elbow closer to your body"
+        } else {
+            formFeedback = "Good form!"
         }
-        let smoothed = buffer.reduce(0, +) / Double(buffer.count)
-        recentAngles[side] = buffer
 
-        if side == .right { currentAngle = smoothed }
-
-        // state machine: count on up-transition
+        // state machine: count on up-transition ONLY if armpit angle is good
         var didRep = false
         let isUp = isUp[side] ?? false
         let isDown = isDown[side] ?? false
         
         if !isUp && !isDown {
             // initialize based on current pose
-            if smoothed >= downAngleThreshold - angleHysteresis {
+            if smoothedElbowAngle >= downAngleThreshold - angleHysteresis {
                 self.isDown[side] = true
-            } else if smoothed <= upAngleThreshold + angleHysteresis {
+            } else if smoothedElbowAngle <= upAngleThreshold + angleHysteresis {
                 self.isUp[side] = true
             }
         } else if isUp {
             // moving from up to down
-            if smoothed >= downAngleThreshold {
+            if smoothedElbowAngle >= downAngleThreshold {
                 self.isUp[side] = false
                 self.isDown[side] = true
             }
         } else if isDown {
-            // moving from down to up => count rep
-            if smoothed <= upAngleThreshold {
+            // moving from down to up => count rep ONLY if armpit angle is good
+            if smoothedElbowAngle <= upAngleThreshold {
                 self.isDown[side] = false
                 self.isUp[side] = true
-                didRep = true
+                // NEW: Only count the rep if armpit angle was good throughout
+                if isArmpitAngleGood {
+                    didRep = true
+                }
             }
         }
         return didRep
+    }
+
+    // NEW: Calculate armpit angle (angle between torso and upper arm)
+    private func armpitAngleDegrees(from pose: Pose, side: Side) -> Double? {
+        let shoulderKey: VNHumanBodyPoseObservation.JointName = (side == .left) ? .leftShoulder : .rightShoulder
+        let elbowKey: VNHumanBodyPoseObservation.JointName = (side == .left) ? .leftElbow : .rightElbow
+        
+        // For torso reference, we'll use the vertical line from shoulder
+        // In a proper bicep curl, the upper arm should stay close to vertical
+        guard let shoulderPoint = pose.landmarks.first(where: { $0.name == shoulderKey })?.location,
+              let elbowPoint = pose.landmarks.first(where: { $0.name == elbowKey })?.location
+        else { return nil }
+        
+        // Calculate the angle between the upper arm (shoulder to elbow) and vertical
+        // Vertical reference vector pointing down
+        let verticalVector = CGVector(dx: 0, dy: -1) // negative because y increases downward in Vision coordinates
+        let upperArmVector = CGVector(dx: elbowPoint.x - shoulderPoint.x, dy: elbowPoint.y - shoulderPoint.y)
+        
+        let dot = verticalVector.dx * upperArmVector.dx + verticalVector.dy * upperArmVector.dy
+        let mag1 = sqrt(verticalVector.dx * verticalVector.dx + verticalVector.dy * verticalVector.dy)
+        let mag2 = sqrt(upperArmVector.dx * upperArmVector.dx + upperArmVector.dy * upperArmVector.dy)
+        
+        guard mag1 > 1e-6, mag2 > 1e-6 else { return nil }
+        
+        let cosθ = max(-1.0, min(1.0, dot / (mag1 * mag2)))
+        let angleInRadians = acos(cosθ)
+        let angleInDegrees = angleInRadians * 180.0 / Double.pi
+        
+        return angleInDegrees
     }
 
     // Helper for three-point angle
@@ -390,16 +450,16 @@ class ExerciseViewModel: ObservableObject {
     private func elbowAngleDegrees(
         from pose: Pose,
         shoulder: VNHumanBodyPoseObservation.JointName,
-        elbow:    VNHumanBodyPoseObservation.JointName,
-        wrist:    VNHumanBodyPoseObservation.JointName
+        elbow: VNHumanBodyPoseObservation.JointName,
+        wrist: VNHumanBodyPoseObservation.JointName
     ) -> Double? {
         guard let pts = validKeypoints([shoulder, elbow, wrist], in: pose) else { return nil }
-        let pA = pts[0], pB = pts[1], pC = pts[2]
-        let v1 = CGVector(dx: pA.x - pB.x, dy: pA.y - pB.y)
-        let v2 = CGVector(dx: pC.x - pB.x, dy: pC.y - pB.y)
-        let dot = v1.dx * v2.dx + v1.dy * v2.dy
-        let mag1 = sqrt(v1.dx * v1.dx + v1.dy * v1.dy)
-        let mag2 = sqrt(v2.dx * v2.dx + v2.dy * v2.dy)
+        let pointA = pts[0], pointB = pts[1], pointC = pts[2]
+        let vector1 = CGVector(dx: pointA.x - pointB.x, dy: pointA.y - pointB.y)
+        let vector2 = CGVector(dx: pointC.x - pointB.x, dy: pointC.y - pointB.y)
+        let dot = vector1.dx * vector2.dx + vector1.dy * vector2.dy
+        let mag1 = sqrt(vector1.dx * vector1.dx + vector1.dy * vector1.dy)
+        let mag2 = sqrt(vector2.dx * vector2.dx + vector2.dy * vector2.dy)
         guard mag1 > 1e-6, mag2 > 1e-6 else { return nil }
         let cosθ = max(-1.0, min(1.0, dot / (mag1 * mag2)))
         return acos(cosθ) * 180.0 / Double.pi
@@ -412,8 +472,8 @@ class ExerciseViewModel: ObservableObject {
     private func checkPosition(from pose: Pose) {
         // Track right arm only (shoulder, elbow, wrist)
         let shoulderKey: VNHumanBodyPoseObservation.JointName = .rightShoulder
-        let elbowKey:    VNHumanBodyPoseObservation.JointName = .rightElbow
-        let wristKey:    VNHumanBodyPoseObservation.JointName = .rightWrist
+        let elbowKey: VNHumanBodyPoseObservation.JointName = .rightElbow
+        let wristKey: VNHumanBodyPoseObservation.JointName = .rightWrist
 
         // Extract normalized points
         guard
@@ -426,10 +486,10 @@ class ExerciseViewModel: ObservableObject {
             positionFeedback = "Show your arm clearly"
             return
         }
-
+        
         // Convert to view coordinates (origin top-left)
-        func toView(_ p: CGPoint) -> CGPoint {
-            CGPoint(x: p.x, y: 1 - p.y)
+        func toView(_ point: CGPoint) -> CGPoint {
+            CGPoint(x: point.x, y: 1 - point.y)
         }
         let shoulder = toView(sPoint)
         let elbow    = toView(ePoint)
@@ -470,24 +530,22 @@ class ExerciseViewModel: ObservableObject {
         }
     }
 
-    
-    private func calculateAngle(p1: CGPoint, p2: CGPoint) -> Double {
-        let dx = p2.x - p1.x
-        let dy = p2.y - p1.y
-        let angle = atan2(dy, dx) * 180 / Double.pi
+    private func calculateAngle(point1: CGPoint, point2: CGPoint) -> Double {
+        let dex = point2.x - point1.x
+        let dey = point2.y - point1.y
+        let angle = atan2(dey, dex) * 180 / Double.pi
         // Normalize angle to be between 0 and 180 degrees
         return (angle + 360).truncatingRemainder(dividingBy: 180)
     }
     
-    private func distance(_ p1: CGPoint, _ p2: CGPoint) -> CGFloat {
-        let dx = p2.x - p1.x
-        let dy = p2.y - p1.y
-        return sqrt(dx * dx + dy * dy)
+    private func distance(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
+        let dex = point2.x - point1.x
+        let dey = point2.y - point1.y
+        return sqrt(dex * dex + dey * dey)
     }
 }
 
 // MARK: –– Delegates
-
 extension ExerciseViewModel: VideoCaptureDelegate {
     func videoCapture(_ videoCapture: VideoCapture, didCreate framePublisher: FramePublisher) {
         updateUI(with: .startingPrediction)

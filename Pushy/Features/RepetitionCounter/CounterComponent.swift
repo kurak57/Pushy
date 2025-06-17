@@ -42,7 +42,7 @@ struct RepetitionCounterView: View {
             }
             
         }
-        .onChange(of: value) { prevValue, newValue in
+        .onChange(of: value) { _, _ in
             animate = false
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                 animate = true

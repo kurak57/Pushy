@@ -11,7 +11,7 @@ import Foundation
 /// Prints performance information to the console once per second.
 ///
 /// The reporter prints the number of frames and predictions in the last second.
-class PerformanceReporter {
+public class PerformanceReporter {
     /// A Boolean that indicates whether to print the performance numbers.
     static let isEnabled = true
 

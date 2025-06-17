@@ -29,7 +29,7 @@ struct ExerciseView: View {
                         Color.clear,
                         Color.clear,
                         Color.black.opacity(0.3),
-                        Color.black.opacity(0.7),
+                        Color.black.opacity(0.7)
                     ]),
                     startPoint: .top,
                     endPoint: .bottom

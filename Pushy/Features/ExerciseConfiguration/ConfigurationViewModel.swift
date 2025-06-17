@@ -1,7 +1,7 @@
 import SwiftUI
 
 @MainActor
-class ConfigurationViewModel: ObservableObject {
+public class ConfigurationViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published var configuration: ExerciseConfiguration
     

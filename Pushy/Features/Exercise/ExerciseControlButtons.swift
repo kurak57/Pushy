@@ -21,4 +21,4 @@ struct ExerciseControlButtons: View {
 
 #Preview {
     ExerciseControlButtons(finishAction: { print("Finish Exercise tapped!") })
-} 
+}

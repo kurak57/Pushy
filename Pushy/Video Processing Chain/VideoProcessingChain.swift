@@ -213,7 +213,6 @@ extension VideoProcessingChain {
         return poses
     }
 
-
     /// Returns the largest pose by area.
     /// - Parameter poses: A `Pose` array optional.
     /// - Returns: The largest`Pose` when the array isn't empty; otherwise `nil`.

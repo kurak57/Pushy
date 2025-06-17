@@ -35,4 +35,3 @@ let onboardingModel: [OnboardingModel] = [
         subtext: "The outline turns white when you’re in the right spot"
     )
 ]
-

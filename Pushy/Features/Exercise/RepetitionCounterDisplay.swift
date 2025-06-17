@@ -62,7 +62,7 @@ struct RepetitionCounterDisplay: View {
         .background(Color.black.opacity(0.6))
         .cornerRadius(12)
         .padding(.top, 30) // Adjust based on top buttons
-        .onChange(of: repetitionCount) { prevValue, newValue in
+        .onChange(of: repetitionCount) { _, _ in
             animate = false
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                 animate = true
