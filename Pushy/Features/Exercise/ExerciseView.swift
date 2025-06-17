@@ -34,13 +34,12 @@ struct ExerciseView: View {
                     startPoint: .top,
                     endPoint: .bottom
                 )
-
+                
                 // UI Elements Layer
                 VStack {
+                    TopControlButtons(isPresented: $isPresented, resetAction: viewModel.resetExercise)
+                        .padding(.top, 16)
                     if viewModel.isExerciseActive && !viewModel.isSessionCompleted {
-                        TopControlButtons(isPresented: $isPresented, resetAction: viewModel.resetExercise)
-                            .padding(.top, 16)
-                        
                         RepetitionCounterDisplay(
                             repetitionCount: viewModel.repCount,
                             actionLabel: viewModel.actionLabel,
@@ -56,7 +55,7 @@ struct ExerciseView: View {
 
                 // Position Guide and Feedback Layer
                 if viewModel.countdown == nil && !viewModel.isExerciseActive && !viewModel.isSessionCompleted {
-                    PositionGuideView(geo: geo)
+                    PositionGuideView(geo: geo, isPositionCorrect: viewModel.isInCorrectPosition)
                     
                     if !viewModel.isInCorrectPosition {
                         PositionFeedbackView(

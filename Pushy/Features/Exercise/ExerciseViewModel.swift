@@ -34,6 +34,9 @@ class ExerciseViewModel: ObservableObject {
     private let processingQueue = DispatchQueue(label: "com.pushy.processing", qos: .userInitiated)
     private var lastProcessedTime: TimeInterval = 0
     private let minimumProcessingInterval: TimeInterval = 1.0 / 30.0 // 30 FPS limit
+    private var correctPositionStartTime: TimeInterval?
+    private let requiredPositionHoldTime: TimeInterval = 3.0
+    private var wasInCorrectPosition: Bool = false
     
     // MARK: - Per‑arm rep‑counting state
     private enum Side { case left, right }
@@ -431,9 +434,24 @@ class ExerciseViewModel: ObservableObject {
                 }
             }
         } else {
-            positionFeedback = "Perfect position! Hold for 2 seconds to start"
-            if !isExerciseActive && !isCountingDown {
-                startCountdown()
+            let currentTime = CACurrentMediaTime()
+            
+            if !wasInCorrectPosition {
+                // Just entered correct position
+                correctPositionStartTime = currentTime
+                wasInCorrectPosition = true
+                positionFeedback = "Perfect position! Hold for 2 seconds to start"
+            } else if let startTime = correctPositionStartTime {
+                let timeInPosition = currentTime - startTime
+                if timeInPosition >= requiredPositionHoldTime {
+                    positionFeedback = "Starting exercise..."
+                    if !isExerciseActive && !isCountingDown {
+                        startCountdown()
+                    }
+                } else {
+                    let remainingTime = Int(ceil(requiredPositionHoldTime - timeInPosition))
+                    positionFeedback = "Perfect position! Hold for \(remainingTime) seconds to start"
+                }
             }
         }
     }

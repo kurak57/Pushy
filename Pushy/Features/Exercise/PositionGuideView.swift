@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PositionGuideView: View {
     let geo: GeometryProxy
+    let isPositionCorrect: Bool
 
     var body: some View {
         VStack {
@@ -15,7 +16,7 @@ struct PositionGuideView: View {
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(
-                            Color.green,
+                            isPositionCorrect ? Color.green : Color.red,
                             lineWidth: 3
                         )
                 )
@@ -27,6 +28,6 @@ struct PositionGuideView: View {
 
 #Preview {
     GeometryReader { geo in
-        PositionGuideView(geo: geo)
+        PositionGuideView(geo: geo, isPositionCorrect: true)
     }
 } 
