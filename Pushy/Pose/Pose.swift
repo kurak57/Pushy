@@ -1,5 +1,5 @@
 /*
-See LICENSE folder for this sample’s licensing information.
+See LICENSE folder for this sample's licensing information.
 
 Abstract:
 A `Pose` is a collection of "landmarks" and connections between select landmarks.
@@ -18,7 +18,7 @@ struct Pose {
     let landmarks: [Landmark]
 
     /// A list of lines between landmarks for drawing a wireframe.
-    private var connections: [Connection]!
+    private var connections: [Connection] = []
 
     /// The locations of the pose's landmarks as a multiarray.
     /// - Tag: multiArray
@@ -115,11 +115,9 @@ extension Pose {
     /// Creates an array of connections from the available landmarks.
     mutating func buildConnections() {
         // Only build the connections once.
-        guard connections == nil else {
+        guard connections.isEmpty else {
             return
         }
-
-        connections = [Connection]()
 
         // Get the joint name for each landmark.
         let joints = landmarks.map { $0.name }

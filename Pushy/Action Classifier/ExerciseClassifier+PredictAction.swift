@@ -1,5 +1,5 @@
 /*
-See LICENSE folder for this sample’s licensing information.
+See LICENSE folder for this sample's licensing information.
 
 Abstract:
 Provides a convenience method that makes a prediction from a multiarray window.
@@ -17,7 +17,9 @@ extension sumpahkaliinibisa_3 {
         do {
             let output = try prediction(poses: window)
             let action = Label(output.label)
-            let confidence = output.labelProbabilities[output.label]!
+            guard let confidence = output.labelProbabilities[output.label] else {
+                fatalError("No confidence value found for label: \(output.label)")
+            }
 
             return ActionPrediction(label: action.rawValue, confidence: confidence)
 
