@@ -21,6 +21,8 @@ class ExerciseViewModel: ObservableObject {
     @Published var isSessionCompleted = false
     @Published var isResting = false
     @Published var restTimeRemaining: Int = 0
+    @Published var isInCorrectPosition = false
+    @Published var positionFeedback = "Position yourself in the guide"
     
     // MARK: - Private Properties
     private var videoCapture: VideoCapture!
@@ -29,6 +31,12 @@ class ExerciseViewModel: ObservableObject {
     private var actionFrameCounts = [String: Int]()
     private var restTimer: Timer?
     private let configuration: ExerciseConfiguration
+    private let processingQueue = DispatchQueue(label: "com.pushy.processing", qos: .userInitiated)
+    private var lastProcessedTime: TimeInterval = 0
+    private let minimumProcessingInterval: TimeInterval = 1.0 / 30.0 // 30 FPS limit
+    private var correctPositionStartTime: TimeInterval?
+    private let requiredPositionHoldTime: TimeInterval = 3.0
+    private var wasInCorrectPosition: Bool = false
     
     // MARK: - Per‑arm rep‑counting state
     private enum Side { case left, right }
@@ -41,6 +49,11 @@ class ExerciseViewModel: ObservableObject {
     private let downAngleThreshold: Double = 160.0 // arm extended
     private let angleHysteresis: Double = 10.0     // prevents bouncing
     private let angleHistoryCount = 5             // smoothing window
+    
+    // MARK: - Constants
+    private let goodCurlLabel = "Good Bicep Curl"
+    private let minGoodCurlConfidence: Double = 0.8  // e.g. only count if ≥80%
+
     
     // MARK: - Computed Properties
     private var currentSetIndex: Int {
@@ -102,9 +115,15 @@ class ExerciseViewModel: ObservableObject {
     }
     
     func startExercise() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            self.startCountdown()
-        }
+        // Remove automatic start
+        // Just initialize the state
+        isExerciseActive = false
+        isSessionCompleted = false
+        isResting = false
+        countdown = nil
+        repCount = 0
+        currentSet = 0
+        resetRepCount()
     }
     
     func resetExercise() {
@@ -226,41 +245,61 @@ class ExerciseViewModel: ObservableObject {
     }
 
     private func drawPoses(_ poses: [Pose]?, onto frame: CGImage) {
-        let frameSize = CGSize(width: frame.width, height: frame.height)
-        let rendererFormat = UIGraphicsImageRendererFormat()
-        rendererFormat.scale = 1.0
-        let renderer = UIGraphicsImageRenderer(size: frameSize, format: rendererFormat)
-
-        let image = renderer.image { context in
-            let cgContext = context.cgContext
-            let inverse = cgContext.ctm.inverted()
-            cgContext.concatenate(inverse)
-
-            cgContext.draw(frame, in: CGRect(origin: .zero, size: frameSize))
-
-            let transform = CGAffineTransform(scaleX: frameSize.width, y: frameSize.height)
-
-            poses?.forEach { pose in
-                pose.drawWireframeToContext(cgContext, applying: transform)
-            }
+        let currentTime = CACurrentMediaTime()
+        guard currentTime - lastProcessedTime >= minimumProcessingInterval else {
+            return // Skip this frame if we're processing too fast
         }
-
-        self.renderedImage = image
+        lastProcessedTime = currentTime
         
-        if let poses = poses, !poses.isEmpty {
-            calculateBicepCurlAngle(from: poses.first!)
+        processingQueue.async { [weak self] in
+            guard let self = self else { return }
+            
+            let frameSize = CGSize(width: frame.width, height: frame.height)
+            let rendererFormat = UIGraphicsImageRendererFormat()
+            rendererFormat.scale = 1.0
+            let renderer = UIGraphicsImageRenderer(size: frameSize, format: rendererFormat)
+
+            let image = renderer.image { context in
+                let cgContext = context.cgContext
+                let inverse = cgContext.ctm.inverted()
+                cgContext.concatenate(inverse)
+
+                cgContext.draw(frame, in: CGRect(origin: .zero, size: frameSize))
+
+                let transform = CGAffineTransform(scaleX: frameSize.width, y: frameSize.height)
+
+                poses?.forEach { pose in
+                    pose.drawWireframeToContext(cgContext, applying: transform)
+                }
+            }
+
+            DispatchQueue.main.async {
+                self.renderedImage = image
+                
+                if let poses = poses, !poses.isEmpty {
+                    if !self.isExerciseActive {
+                        self.checkPosition(from: poses.first!)
+                    } else {
+                        self.calculateBicepCurlAngle(from: poses.first!)
+                    }
+                }
+            }
         }
     }
     
     private func calculateBicepCurlAngle(from pose: Pose) {
+        // geometric rep detection
         let leftDidRep  = processCurl(side: .left,  pose: pose)
         let rightDidRep = processCurl(side: .right, pose: pose)
         guard let currentConfig = currentSetConfig else { return }
 
-        if leftDidRep || rightDidRep {
-            
-            if self.repCount < currentConfig.reps {
-                self.repCount += 1
+        // only count if geometry AND model agrees it’s a “good” curl
+        let didGeometryRep = leftDidRep || rightDidRep
+        let isGoodCurl = (actionLabel == goodCurlLabel)
+
+        if didGeometryRep && isGoodCurl {
+            if repCount < currentConfig.reps {
+                repCount += 1
             }
         }
     }
@@ -346,6 +385,89 @@ class ExerciseViewModel: ObservableObject {
 
     private func addFrameCount(_ count: Int, to label: String) {
         actionFrameCounts[label, default: 0] += count
+    }
+
+    private func checkPosition(from pose: Pose) {
+        // Get key points for position check
+        let leftShoulder = pose.landmarks.first(where: { $0.name == .leftShoulder })?.location
+        let rightShoulder = pose.landmarks.first(where: { $0.name == .rightShoulder })?.location
+        let leftHip = pose.landmarks.first(where: { $0.name == .leftHip })?.location
+        let rightHip = pose.landmarks.first(where: { $0.name == .rightHip })?.location
+        
+        guard let leftShoulder = leftShoulder,
+              let rightShoulder = rightShoulder,
+              let leftHip = leftHip,
+              let rightHip = rightHip else {
+            isInCorrectPosition = false
+            positionFeedback = "Cannot detect body position"
+            return
+        }
+        
+        // Calculate angles for side view check
+        let shoulderAngle = calculateAngle(p1: leftShoulder, p2: rightShoulder)
+        let hipAngle = calculateAngle(p1: leftHip, p2: rightHip)
+        
+        // For side view, we want the shoulders and hips to be roughly horizontal (0 or 180 degrees)
+        // This is because in side view, the left and right points should be aligned horizontally
+        let isShouldersHorizontal = (abs(shoulderAngle) < 30) || (abs(shoulderAngle - 180) < 30)
+        let isHipsHorizontal = (abs(hipAngle) < 30) || (abs(hipAngle - 180) < 30)
+        
+        // Check if body is centered in frame
+        let isCentered = abs(leftShoulder.x - 0.5) < 0.2 && abs(rightShoulder.x - 0.5) < 0.2
+        
+        // Check if body is at appropriate distance (using shoulder width as reference)
+        let shoulderWidth = distance(leftShoulder, rightShoulder)
+        let isGoodDistance = shoulderWidth > 0.2 && shoulderWidth < 0.4
+        
+        isInCorrectPosition = isShouldersHorizontal && isHipsHorizontal && isCentered && isGoodDistance
+        
+        if !isInCorrectPosition {
+            if !isShouldersHorizontal || !isHipsHorizontal {
+                positionFeedback = "Turn your body to the side (shoulders: \(Int(shoulderAngle))°, hips: \(Int(hipAngle))°)"
+            } else if !isCentered {
+                positionFeedback = "Center your body in the frame"
+            } else if !isGoodDistance {
+                if shoulderWidth < 0.2 {
+                    positionFeedback = "Move closer to the camera"
+                } else {
+                    positionFeedback = "Move further from the camera"
+                }
+            }
+        } else {
+            let currentTime = CACurrentMediaTime()
+            
+            if !wasInCorrectPosition {
+                // Just entered correct position
+                correctPositionStartTime = currentTime
+                wasInCorrectPosition = true
+                positionFeedback = "Perfect position! Hold for 2 seconds to start"
+            } else if let startTime = correctPositionStartTime {
+                let timeInPosition = currentTime - startTime
+                if timeInPosition >= requiredPositionHoldTime {
+                    positionFeedback = "Starting exercise..."
+                    if !isExerciseActive && !isCountingDown {
+                        startCountdown()
+                    }
+                } else {
+                    let remainingTime = Int(ceil(requiredPositionHoldTime - timeInPosition))
+                    positionFeedback = "Perfect position! Hold for \(remainingTime) seconds to start"
+                }
+            }
+        }
+    }
+    
+    private func calculateAngle(p1: CGPoint, p2: CGPoint) -> Double {
+        let dx = p2.x - p1.x
+        let dy = p2.y - p1.y
+        let angle = atan2(dy, dx) * 180 / Double.pi
+        // Normalize angle to be between 0 and 180 degrees
+        return (angle + 360).truncatingRemainder(dividingBy: 180)
+    }
+    
+    private func distance(_ p1: CGPoint, _ p2: CGPoint) -> CGFloat {
+        let dx = p2.x - p1.x
+        let dy = p2.y - p1.y
+        return sqrt(dx * dx + dy * dy)
     }
 }
 

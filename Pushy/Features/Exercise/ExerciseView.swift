@@ -14,79 +14,99 @@ struct ExerciseView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .top) {
-            CameraPreviewView(viewModel: viewModel)
-                .ignoresSafeArea()
+        GeometryReader { geo in
+            ZStack {
+                // Camera Preview Layer
+                CameraPreviewView(viewModel: viewModel)
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .clipped()
 
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.black.opacity(0.7),
-                    Color.black.opacity(0.3),
-                    Color.clear,
-                    Color.clear,
-                    Color.black.opacity(0.3),
-                    Color.black.opacity(0.7),
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-
-            
-            if viewModel.isExerciseActive && !viewModel.isSessionCompleted {
-                TopControlButtons(isPresented: $isPresented, resetAction: viewModel.resetExercise)
-                RepetitionCounterDisplay(
-                    repetitionCount: viewModel.repCount,
-                    actionLabel: viewModel.actionLabel,
-                    confidenceLabel: viewModel.confidenceLabel
+                // Gradient Overlay
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.black.opacity(0.7),
+                        Color.black.opacity(0.3),
+                        Color.clear,
+                        Color.clear,
+                        Color.black.opacity(0.3),
+                        Color.black.opacity(0.7),
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
-                .padding(.bottom, 200)
-            }
-
-            GeometryReader { geo in
-                ZStack {
-                    if viewModel.countdown == nil && !viewModel.isExerciseActive && !viewModel.isSessionCompleted {
-                        PositionGuideView(geo: geo)
-                    }
-                    
-                    if !viewModel.isSessionCompleted {
-                        if viewModel.isResting {
-                            VStack(spacing: 16) {
-                                Text("Rest Time")
-                                    .font(.title2)
-                                    .foregroundColor(.white)
-                                Text("\(viewModel.restTimeRemaining)s")
-                                    .font(.system(size: 48, weight: .bold))
-                                    .foregroundColor(.cyan)
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        } else if let setInfo = viewModel.currentSetInfo {
-                            GoalsInfoDisplay(
-                                currentSet: setInfo.currentSet,
-                                totalSets: setInfo.totalSets,
-                                totalReps: setInfo.reps,
-                                weight: setInfo.weight
-                            )
-                        }
-                    }
-                    
-                    if let count = viewModel.countdown {
-                        CountdownDisplay(count: count, isCountingDown: viewModel.isCountingDown)
-                    }
-                    
-                    if viewModel.isSessionCompleted {
-                        SessionCompletedView(
-                            totalSets: viewModel.currentSetInfo?.totalSets ?? 0,
-                            totalReps: viewModel.totalReps,
-                            dismissAction: { self.isPresented = false }
+                
+                // UI Elements Layer
+                VStack {
+                    TopControlButtons(isPresented: $isPresented, resetAction: viewModel.resetExercise)
+                        .padding(.top, 16)
+                    if viewModel.isExerciseActive && !viewModel.isSessionCompleted {
+                        RepetitionCounterDisplay(
+                            repetitionCount: viewModel.repCount,
+                            actionLabel: viewModel.actionLabel,
+                            confidenceLabel: viewModel.confidenceLabel
                         )
+                        .padding(.top, 16)
+                    }
+                    
+                    Spacer()
+                }
+                .safeAreaPadding(.top)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                // Position Guide and Feedback Layer
+                if viewModel.countdown == nil && !viewModel.isExerciseActive && !viewModel.isSessionCompleted {
+                    PositionGuideView(geo: geo, isPositionCorrect: viewModel.isInCorrectPosition)
+                    
+                    if !viewModel.isInCorrectPosition {
+                        PositionFeedbackView(
+                            feedback: viewModel.positionFeedback,
+                            isInCorrectPosition: viewModel.isInCorrectPosition
+                        )
+                        .transition(.opacity)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                // Exercise State Layer
+                if !viewModel.isSessionCompleted {
+                    if viewModel.isResting {
+                        VStack(spacing: 16) {
+                            Text("Rest Time")
+                                .font(.title2)
+                                .foregroundColor(.white)
+                            Text("\(viewModel.restTimeRemaining)s")
+                                .font(.system(size: 48, weight: .bold))
+                                .foregroundColor(.cyan)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if let setInfo = viewModel.currentSetInfo {
+                        GoalsInfoDisplay(
+                            currentSet: setInfo.currentSet,
+                            totalSets: setInfo.totalSets,
+                            totalReps: setInfo.reps,
+                            weight: setInfo.weight
+                        )
+                        .safeAreaPadding(.bottom)
+                    }
+                }
+
+                // Countdown Layer
+                if let count = viewModel.countdown {
+                    CountdownDisplay(count: count, isCountingDown: viewModel.isCountingDown)
+                }
+
+                // Session Completed Layer
+                if viewModel.isSessionCompleted {
+                    SessionCompletedView(
+                        totalSets: viewModel.currentSetInfo?.totalSets ?? 0,
+                        totalReps: viewModel.totalReps,
+                        dismissAction: { self.isPresented = false }
+                    )
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .ignoresSafeArea()
         .onAppear {
-            viewModel.startExercise()
             viewModel.startCamera()
         }
         .onChange(of: viewModel.countdown) { _, _ in
@@ -106,12 +126,11 @@ struct CameraPreviewView: View {
 
     var body: some View {
         ZStack {
-            Color.black
             if let image = viewModel.renderedImage {
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .clipped()
+                    .clipped(antialiased: true)
             } else {
                 VStack {
                     ProgressView()
