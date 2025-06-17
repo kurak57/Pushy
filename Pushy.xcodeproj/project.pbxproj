@@ -6,8 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A4100DF82E01585C000CD2F2 /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = A4100DF72E015847000CD2F2 /* .swiftlint.yml */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		4434249E2DFAA45900A9EC9D /* Pushy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pushy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A4100DF72E015847000CD2F2 /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -32,6 +37,7 @@
 		443424952DFAA45900A9EC9D = {
 			isa = PBXGroup;
 			children = (
+				A4100DF72E015847000CD2F2 /* .swiftlint.yml */,
 				443424A02DFAA45900A9EC9D /* Pushy */,
 				4434249F2DFAA45900A9EC9D /* Products */,
 			);
@@ -55,6 +61,7 @@
 				4434249A2DFAA45900A9EC9D /* Sources */,
 				4434249B2DFAA45900A9EC9D /* Frameworks */,
 				4434249C2DFAA45900A9EC9D /* Resources */,
+				A4100DF62E015736000CD2F2 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -94,6 +101,9 @@
 			);
 			mainGroup = 443424952DFAA45900A9EC9D;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A4100DF52E015717000CD2F2 /* XCRemoteSwiftPackageReference "SwiftLint" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4434249F2DFAA45900A9EC9D /* Products */;
 			projectDirPath = "";
@@ -109,10 +119,33 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A4100DF82E01585C000CD2F2 /* .swiftlint.yml in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		A4100DF62E015736000CD2F2 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nif [[ \"$(uname -m)\" == arm64 ]]; then\n    export PATH=\"/opt/homebrew/bin:$PATH\"\nfi\nif which swiftlint > /dev/null; then\n  swiftlint\nelse\n  echo \"warning: SwiftLint t installed, download from https://github.com/realm/SwiftLint\"\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		4434249A2DFAA45900A9EC9D /* Sources */ = {
@@ -252,8 +285,9 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Pushy/Preview Content\"";
-				DEVELOPMENT_TEAM = U2544A5GHC;
+				DEVELOPMENT_TEAM = 3B34Y73YV3;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -281,8 +315,9 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Pushy/Preview Content\"";
-				DEVELOPMENT_TEAM = U2544A5GHC;
+				DEVELOPMENT_TEAM = 3B34Y73YV3;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -324,6 +359,17 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A4100DF52E015717000CD2F2 /* XCRemoteSwiftPackageReference "SwiftLint" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/realm/SwiftLint.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.59.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
 	};
 	rootObject = 443424962DFAA45900A9EC9D /* Project object */;
 }

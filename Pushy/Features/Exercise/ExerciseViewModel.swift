@@ -25,8 +25,8 @@ class ExerciseViewModel: ObservableObject {
     @Published var positionFeedback = "Position yourself in the guide"
     
     // MARK: - Private Properties
-    private var videoCapture: VideoCapture!
-    private var videoProcessingChain: VideoProcessingChain!
+    private var videoCapture: VideoCapture?
+    private var videoProcessingChain: VideoProcessingChain?
     private var cancellables = Set<AnyCancellable>()
     private var actionFrameCounts = [String: Int]()
     private var restTimer: Timer?
@@ -54,6 +54,13 @@ class ExerciseViewModel: ObservableObject {
     private let goodCurlLabel = "Good Bicep Curl"
     private let minGoodCurlConfidence: Double = 0.8  // e.g. only count if ≥80%
 
+    // MARK: - Types
+    struct SetInfo {
+        let currentSet: Int
+        let totalSets: Int
+        let reps: Int
+        let weight: Double
+    }
     
     // MARK: - Computed Properties
     private var currentSetIndex: Int {
@@ -92,26 +99,26 @@ class ExerciseViewModel: ObservableObject {
     
     func setupPipeline() {
         videoProcessingChain = VideoProcessingChain()
-        videoProcessingChain.delegate = self
+        videoProcessingChain?.delegate = self
         
         videoCapture = VideoCapture()
-        videoCapture.delegate = self
+        videoCapture?.delegate = self
     }
     
     func toggleCamera() {
-        videoCapture.toggleCameraSelection()
+        videoCapture?.toggleCameraSelection()
     }
     
     func updateOrientation() {
-        videoCapture.updateDeviceOrientation()
+        videoCapture?.updateDeviceOrientation()
     }
     
     func stopCamera() {
-        videoCapture.isEnabled = false
+        videoCapture?.isEnabled = false
     }
     
     func startCamera() {
-        videoCapture.isEnabled = true
+        videoCapture?.isEnabled = true
     }
     
     func startExercise() {
@@ -230,9 +237,14 @@ class ExerciseViewModel: ObservableObject {
     }
     
     // MARK: - View Helpers
-    var currentSetInfo: (currentSet: Int, totalSets: Int, reps: Int, weight: Double)? {
+    var currentSetInfo: SetInfo? {
         guard let currentConfig = currentSetConfig else { return nil }
-        return (currentSet, configuration.sets.count, currentConfig.reps, currentConfig.weight)
+        return SetInfo(
+            currentSet: currentSet,
+            totalSets: configuration.sets.count,
+            reps: currentConfig.reps,
+            weight: currentConfig.weight
+        )
     }
     
     var totalReps: Int {
@@ -278,9 +290,13 @@ class ExerciseViewModel: ObservableObject {
                 
                 if let poses = poses, !poses.isEmpty {
                     if !self.isExerciseActive {
-                        self.checkPosition(from: poses.first!)
+                        if let firstPose = poses.first {
+                            self.checkPosition(from: firstPose)
+                        }
                     } else {
-                        self.calculateBicepCurlAngle(from: poses.first!)
+                        if let firstPose = poses.first {
+                            self.calculateBicepCurlAngle(from: firstPose)
+                        }
                     }
                 }
             }
@@ -293,7 +309,7 @@ class ExerciseViewModel: ObservableObject {
         let rightDidRep = processCurl(side: .right, pose: pose)
         guard let currentConfig = currentSetConfig else { return }
 
-        // only count if geometry AND model agrees it’s a “good” curl
+        // only count if geometry AND model agrees it's a "good" curl
         let didGeometryRep = leftDidRep || rightDidRep
         let isGoodCurl = (actionLabel == goodCurlLabel)
 
@@ -318,7 +334,10 @@ class ExerciseViewModel: ObservableObject {
         else { return false }
 
         // smooth
-        var buffer = recentAngles[side]!
+        guard var buffer = recentAngles[side] else {
+            return false
+        }
+
         buffer.append(rawAngle)
         if buffer.count > angleHistoryCount {
             buffer.removeFirst()
@@ -330,24 +349,27 @@ class ExerciseViewModel: ObservableObject {
 
         // state machine: count on up-transition
         var didRep = false
-        if !isUp[side]! && !isDown[side]! {
+        let isUp = isUp[side] ?? false
+        let isDown = isDown[side] ?? false
+        
+        if !isUp && !isDown {
             // initialize based on current pose
             if smoothed >= downAngleThreshold - angleHysteresis {
-                isDown[side] = true
+                self.isDown[side] = true
             } else if smoothed <= upAngleThreshold + angleHysteresis {
-                isUp[side] = true
+                self.isUp[side] = true
             }
-        } else if isUp[side]! {
+        } else if isUp {
             // moving from up to down
             if smoothed >= downAngleThreshold {
-                isUp[side] = false
-                isDown[side] = true
+                self.isUp[side] = false
+                self.isDown[side] = true
             }
-        } else if isDown[side]! {
+        } else if isDown {
             // moving from down to up => count rep
             if smoothed <= upAngleThreshold {
-                isDown[side] = false
-                isUp[side] = true
+                self.isDown[side] = false
+                self.isUp[side] = true
                 didRep = true
             }
         }
@@ -476,7 +498,7 @@ class ExerciseViewModel: ObservableObject {
 extension ExerciseViewModel: VideoCaptureDelegate {
     func videoCapture(_ videoCapture: VideoCapture, didCreate framePublisher: FramePublisher) {
         updateUI(with: .startingPrediction)
-        videoProcessingChain.upstreamFramePublisher = framePublisher
+        videoProcessingChain?.upstreamFramePublisher = framePublisher
     }
 }
 

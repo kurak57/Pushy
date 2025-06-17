@@ -1,5 +1,5 @@
 /*
-See LICENSE folder for this sample’s licensing information.
+See LICENSE folder for this sample's licensing information.
 
 Abstract:
 Defines the Exercise Classifier's frame rate.
@@ -56,7 +56,10 @@ extension sumpahkaliinibisa_3 {
             fatalError("The model's input multiarray must be 3 dimensions.")
         }
 
-        let windowSize = Int(truncating: dimensions.first!)
+        guard let firstDimension = dimensions.first else {
+            fatalError("The model's input multiarray must have at least one dimension.")
+        }
+        let windowSize = Int(truncating: firstDimension)
         let frameRate = sumpahkaliinibisa_3.frameRate
 
         let timeSpan = Double(windowSize) / frameRate

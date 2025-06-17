@@ -1,5 +1,5 @@
 /*
-See LICENSE folder for this sample’s licensing information.
+See LICENSE folder for this sample's licensing information.
 
 Abstract:
 A `Connection` defines the line between two landmarks.
@@ -23,10 +23,15 @@ extension Pose {
         ] as CFArray
 
         static let gradientColorSpace = CGColorSpace(name: CGColorSpace.sRGB)
-
-        static let gradient = CGGradient(colorsSpace: gradientColorSpace,
-                                         colors: colors,
-                                         locations: [0, 0.2, 0.33, 0.5, 0.66, 0.8])!
+        
+        static let gradient: CGGradient = {
+            guard let gradient = CGGradient(colorsSpace: gradientColorSpace,
+                                          colors: colors,
+                                          locations: [0, 0.2, 0.33, 0.5, 0.66, 0.8]) else {
+                fatalError("Failed to create gradient")
+            }
+            return gradient
+        }()
 
         /// The connection's first endpoint.
         private let point1: CGPoint

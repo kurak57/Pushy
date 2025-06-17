@@ -51,7 +51,7 @@ struct RepetitionCounterView: View {
     }
 }
 
-struct counterView: View {
+struct CounterView: View {
     @State private var count = 0
 
     var body: some View {
@@ -72,5 +72,5 @@ struct counterView: View {
 }
 
 #Preview {
-    counterView()
+    CounterView()
 }
