@@ -10,7 +10,7 @@ class ConfigurationViewModel: ObservableObject {
         self.configuration = ExerciseConfiguration(
             exerciseName: "Bicep Curl",
             sets: [ExerciseSet(weight: 15.0, reps: 5)],
-            restTime: 60
+            restTime: 0
         )
     }
     
@@ -33,7 +33,7 @@ class ConfigurationViewModel: ObservableObject {
     
     func removeSet(at index: Int) {
         // Don't remove if it's the last set
-        guard configuration.sets.count > 1 else { return }
+        guard configuration.sets.count > 1, configuration.sets.indices.contains(index) else { return }
         configuration.sets.remove(at: index)
     }
     

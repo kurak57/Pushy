@@ -15,7 +15,7 @@ struct HomeView: View {
         sets: [
             
         ],
-        restTime: 60
+        restTime: 0
     )
     
     var body: some View {
