@@ -30,5 +30,5 @@ struct InformationItem: View {
 }
 
 #Preview {
-    InformationItem(item: .init(icon: "🔔", title: "Title", message: "Message"))
+    InformationItem(item: .init(icon: "💪", title: "Track Bicep Curls Only", message: "For now, the app is built just for bicep curls—works best in bright, open spaces."))
 }

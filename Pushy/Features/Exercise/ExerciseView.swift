@@ -21,46 +21,60 @@ struct ExerciseView: View {
                     .frame(width: geo.size.width, height: geo.size.height)
                     .clipped()
                 // "No Person" Overlay
-                if isNoPersonDetected && !viewModel.isResting{
-                    Color.black.opacity(0.6)
-                        .ignoresSafeArea()
-                }
-                // UI Elements Layer
-                VStack {
-                    TopControlButtons(
-                        isPresented: $isPresented,
-                        resetAction: viewModel.resetExercise,
-                        isExerciseActive: viewModel.isExerciseActive,
-                        isSessionCompleted: viewModel.isSessionCompleted,
-                        repetitionCount: viewModel.repCount
-                    )
-                    .safeAreaPadding(.top)
-                    .background(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color.black, Color.black.opacity(0.2)]),
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    
-                    if viewModel.isExerciseActive &&
-                       !viewModel.isSessionCompleted &&
-                       !viewModel.isResting &&
-                       (viewModel.actionLabel == "Loose Back" || viewModel.actionLabel == "Elevated Elbow") {
-
-                        Text(viewModel.actionLabel)
-                            .font(.system(size: 40, weight: .bold))
-                            .foregroundColor(.red)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(Color.black.opacity(0.5))
-                            .cornerRadius(12)
+                if isNoPersonDetected && !viewModel.isResting {
+                    ZStack {
+                        Color.black.opacity(0.6)
+                            .ignoresSafeArea()
+                        
+                        Text("No Person Found")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(12)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                Color.textOverlayBG
+                                    .frame(height: nil)
+                            )
+                            .cornerRadius(0)
                     }
-
-
-                    Spacer()
                 }
-
+                
+                // UI Elements Layer
+                if !isNoPersonDetected {
+                    VStack {
+                        TopControlButtons(
+                            isPresented: $isPresented,
+                            resetAction: viewModel.resetExercise,
+                            isExerciseActive: viewModel.isExerciseActive,
+                            isSessionCompleted: viewModel.isSessionCompleted,
+                            repetitionCount: viewModel.repCount
+                        )
+                        .safeAreaPadding(.top)
+                        .background(
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color.black, Color.black.opacity(0.2)]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        
+                        if viewModel.isExerciseActive &&
+                            !viewModel.isSessionCompleted &&
+                            !viewModel.isResting &&
+                            (viewModel.actionLabel == "Loose Back" || viewModel.actionLabel == "Elevated Elbow") {
+                            
+                            Text(viewModel.actionLabel)
+                                .font(.system(size: 40, weight: .bold))
+                                .foregroundColor(.red)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .background(Color.black.opacity(0.5))
+                                .cornerRadius(12)
+                        }
+                        
+                        Spacer()
+                    }
+                }
                 
                 // Position Guide and Feedback Layer
                 if viewModel.countdown == nil && !viewModel.isExerciseActive && !viewModel.isSessionCompleted {
@@ -77,15 +91,34 @@ struct ExerciseView: View {
                 // Exercise State Layer
                 if !viewModel.isSessionCompleted {
                     if viewModel.isResting {
-                        VStack(spacing: 16) {
-                            Text("Rest Time")
-                                .font(.title2)
-                                .foregroundColor(.white)
-                            Text("\(viewModel.restTimeRemaining)s")
-                                .font(.system(size: 48, weight: .bold))
-                                .foregroundColor(.cyan)
+                        ZStack {
+                            Color.black.opacity(0.5)
+                                .ignoresSafeArea()
+                            
+                            VStack(spacing: 0) {
+                                Text("Rest Time")
+                                    .font(.system(size: 20))
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.whiteShadow)
+                                HStack(alignment: .center, spacing: 10) {
+                                    Text("\(viewModel.restTimeRemaining)")
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.white)
+                                    Text("s")
+                                        .foregroundColor(.whiteShadow)
+                                }
+                                .font(.system(size: 60))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 4)
+                            }
+                            .padding(12)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                Color.textOverlayBG
+                                    .frame(height: nil)
+                            )
+                            .cornerRadius(0)
                         }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else if let setInfo = viewModel.currentSetInfo {
                         GoalsInfoDisplay(
                             currentSet: setInfo.currentSet,
@@ -96,10 +129,19 @@ struct ExerciseView: View {
                         .safeAreaPadding(.bottom)
                     }
                 }
-
+                
                 // Countdown Layer
                 if let count = viewModel.countdown {
-                    CountdownDisplay(count: count, isCountingDown: viewModel.isCountingDown)
+                    if !isNoPersonDetected {
+                        ZStack {
+                            // Overlay
+                            Color.black.opacity(0.5)
+                                .ignoresSafeArea()
+                            
+                            // Countdown view
+                            CountdownDisplay(count: count, isCountingDown: viewModel.isCountingDown)
+                        }
+                    }
                 }
                 // Session Completed Layer
                 if viewModel.isSessionCompleted {
@@ -140,7 +182,7 @@ struct ExerciseView: View {
 
 struct CameraPreviewView: View {
     @ObservedObject var viewModel: ExerciseViewModel
-
+    
     var body: some View {
         ZStack {
             if let image = viewModel.renderedImage {

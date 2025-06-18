@@ -139,9 +139,9 @@ struct ConfigurationView: View {
                     Spacer()
                     
                     // Done Button
-                    Button(action: {
+                    Button {
                         showRestTimePicker = false
-                    }) {
+                    } label: {
                         Text("Done")
                             .font(.headline)
                             .frame(maxWidth: .infinity)
@@ -152,8 +152,8 @@ struct ConfigurationView: View {
                             .padding(.horizontal, 24)
                             .padding(.bottom, 24)
                             .shadow(color: .gray, radius: 0, x: 0, y: 4)
-                        
                     }
+
                 }
                 .background(Color.sheet.ignoresSafeArea())
                 .presentationDetents([.fraction(0.4)])
