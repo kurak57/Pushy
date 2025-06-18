@@ -16,13 +16,18 @@ struct OnboardingView: View {
         VStack {
             ZStack {
                 HStack {
-                    Button(action: {
+                    Button {
                         showOnboarding = false
-                    }) {
-                        Image(systemName: "chevron.left")
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 20))
+                            .fontWeight(.bold)
                             .foregroundColor(.gray)
-                            .padding()
+                            .padding(.horizontal)
+                            .padding(.vertical, 8)
                     }
+                    .padding(.bottom, 8)
+                    
                     Spacer()
                 }
                 
@@ -30,7 +35,7 @@ struct OnboardingView: View {
                     .frame(width: 200)
             }
             .padding(.top, 16)
-
+            
             // Onboarding TabView
             TabView(selection: $currentIndex) {
                 ForEach(Array(onboardingModel.enumerated()), id: \.offset) { index, step in
@@ -44,13 +49,13 @@ struct OnboardingView: View {
                             .resizable()
                             .scaledToFit()
                             .frame(maxWidth: 200, maxHeight: 200)
-
+                        
                         Text(step.description)
                             .font(.body)
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
-
+                        
                         if let subtext = step.subtext {
                             Text(subtext)
                                 .font(.footnote)
@@ -62,9 +67,9 @@ struct OnboardingView: View {
                 }
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-
+            
             Spacer()
-
+            
             HStack {
                 if currentIndex > 0 {
                     // Back Button
@@ -81,10 +86,10 @@ struct OnboardingView: View {
                             .padding(.leading)
                     }
                 }
-
+                
                 // Next Button
                 Button(action: {
-
+                    
                     if currentIndex < onboardingModel.count - 1 {
                         currentIndex += 1
                     } else {
@@ -102,7 +107,7 @@ struct OnboardingView: View {
                 }
             }
             .padding(.bottom)
-
+            
         }
         .background(Color.black.ignoresSafeArea())
     }

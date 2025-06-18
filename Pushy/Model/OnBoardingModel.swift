@@ -23,14 +23,14 @@ let onboardingModel: [OnboardingModel] = [
         subtext: "No earphones? You can still continue"
     ),
     OnboardingModel(
-        imageName: "Set Your Phone",
+        imageName: "tripod",
         title: "Set Your Phone",
         description: "Use a tripod, stick your phone to a mirror, or lean it on something stable",
         subtext: "Make sure the phone is steady and won’t fall during your workout"
     ),
     OnboardingModel(
-        imageName: "Be Ready!",
-        title: "Align with Silhouette",
+        imageName: "body",
+        title: "Be Ready!",
         description: "When you’re ready, tap “Get Started”",
         subtext: "Then, align your body with the silhouette to begin calibration"
     )

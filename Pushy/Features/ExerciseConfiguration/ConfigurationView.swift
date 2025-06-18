@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import AVKit
+
 
 struct ExerciseSet {
     var weight: Double
@@ -33,7 +35,7 @@ struct ConfigurationView: View {
             ScrollView {
                 VStack {
                     titleSection
-                    videoPreviewSection
+                    VideoPlayerView(videoName: "bicep-curl-video", fileExtension: "mp4")
                     restTimeSection
                     setsSection
                     addSetButton
@@ -72,27 +74,7 @@ struct ConfigurationView: View {
             .padding()
     }
     
-    private var videoPreviewSection: some View {
-        VStack {
-            Image(systemName: "photo") // placeholder
-                .resizable()
-                .scaledToFit()
-                .frame(width: 145, height: 145)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .foregroundColor(.white)
-            
-            Text("Video tutorial")
-                .font(.system(size: 17, weight: .semibold, design: .default))
-                .foregroundColor(.gray)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 24)
-        .frame(maxWidth: .infinity, minHeight: 200, maxHeight: 200, alignment: .center)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.gray.opacity(0.4), lineWidth: 1)
-        )
-    }
+    
     
     private var restTimeSection: some View {
         HStack {
