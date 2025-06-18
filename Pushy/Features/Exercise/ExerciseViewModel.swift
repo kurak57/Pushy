@@ -5,7 +5,6 @@ import UIKit
 import SwiftUI
 import AVFoundation
 
-@MainActor
 public class ExerciseViewModel: ObservableObject {
     // MARK: - ML State
     @Published var actionLabel: String = "Observing..."
@@ -93,6 +92,7 @@ public class ExerciseViewModel: ObservableObject {
         self.configuration = configuration
         setupPipeline()
         setupAudioPlayer()
+        enableScreenWake()
     }
     
     // MARK: - Public Methods
@@ -137,24 +137,11 @@ public class ExerciseViewModel: ObservableObject {
         repCount = 0
         currentSet = 0
         resetRepCount()
-        enableScreenWake() // Enable screen wake when exercise starts
     }
     
     func resetExercise() {
         stopAllTimers()
-        isExerciseActive = false
-        isSessionCompleted = false
-        isResting = false
-        countdown = nil
-        repCount = 0
-        currentSet = 0
-        resetRepCount()
-        enableScreenWake() // Enable screen wake when exercise resets
-        
-        // Start the exercise again after a short delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.startExercise()
-        }
+        self.startExercise()
     }
     
     private func setupAudioPlayer() {
@@ -262,7 +249,6 @@ public class ExerciseViewModel: ObservableObject {
         if !isLastSet && countdown == nil {
             isExerciseActive = true
             currentSet += 1
-            enableScreenWake() // Enable screen wake when exercise becomes active
         }
     }
     
@@ -275,11 +261,8 @@ public class ExerciseViewModel: ObservableObject {
                 isExerciseActive = false
                 isSessionCompleted = true
                 playCompletionSound() // Play completion sound when session is done
-                disableScreenWake() // Disable screen wake when session is completed
             } else {
                 startRestTimer()
-                // Keep screen awake during rest periods
-                enableScreenWake()
             }
         }
     }
@@ -574,20 +557,6 @@ public class ExerciseViewModel: ObservableObject {
         }
     }
 
-    private func calculateAngle(point1: CGPoint, point2: CGPoint) -> Double {
-        let dex = point2.x - point1.x
-        let dey = point2.y - point1.y
-        let angle = atan2(dey, dex) * 180 / Double.pi
-        // Normalize angle to be between 0 and 180 degrees
-        return (angle + 360).truncatingRemainder(dividingBy: 180)
-    }
-    
-    private func distance(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
-        let dex = point2.x - point1.x
-        let dey = point2.y - point1.y
-        return sqrt(dex * dex + dey * dey)
-    }
-    
     // MARK: - Screen Wake
     private func enableScreenWake() {
         DispatchQueue.main.async {

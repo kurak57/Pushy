@@ -57,13 +57,12 @@ struct ExerciseView: View {
                 if viewModel.countdown == nil && !viewModel.isExerciseActive && !viewModel.isSessionCompleted {
                     PositionGuideView(geo: geo, isPositionCorrect: viewModel.isInCorrectPosition)
                     
-                    if !viewModel.isInCorrectPosition {
-                        PositionFeedbackView(
-                            feedback: viewModel.positionFeedback,
-                            isInCorrectPosition: viewModel.isInCorrectPosition
-                        )
-                        .transition(.opacity)
-                    }
+                    PositionFeedbackView(
+                        feedback: viewModel.positionFeedback,
+                        isInCorrectPosition: viewModel.isInCorrectPosition
+                    )
+                    .transition(.opacity)
+                    
                 }
 
                 // Exercise State Layer
@@ -117,6 +116,7 @@ struct ExerciseView: View {
         }
         .onDisappear {
             viewModel.stopCamera()
+            viewModel.cleanup()
         }
     }
 }
