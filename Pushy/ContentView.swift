@@ -8,8 +8,19 @@
 import SwiftUI
 
 struct ContentView: View {
+    
+    @State private var hasSeenFeatureInfo = false
+    
     var body: some View {
-        HomeView()
+        Group {
+            if hasSeenFeatureInfo {
+                HomeView()
+            } else {
+                InformationView(onFinish: {
+                    hasSeenFeatureInfo = true
+                })
+            }
+        }
     }
 }
 
