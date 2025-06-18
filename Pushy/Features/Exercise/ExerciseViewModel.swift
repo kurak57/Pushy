@@ -26,6 +26,7 @@ public class ExerciseViewModel: ObservableObject {
     @Published var positionFeedback = "Position yourself in the guide"
     @Published var formFeedback = ""
     
+    
     // MARK: - Private Properties
     private var videoCapture: VideoCapture?
     private var videoProcessingChain: VideoProcessingChain?
@@ -209,6 +210,7 @@ public class ExerciseViewModel: ObservableObject {
                         self.isCountingDown = false
                         self.isExerciseActive = true
                         self.countdown = nil
+                        self.isExerciseActive = true
                     }
                 }
             }
@@ -556,6 +558,7 @@ public class ExerciseViewModel: ObservableObject {
                 "Turn sideways so your arm is vertical"
         }
     }
+    
 
     // MARK: - Screen Wake
     private func enableScreenWake() {

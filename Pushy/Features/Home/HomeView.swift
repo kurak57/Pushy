@@ -30,13 +30,14 @@ struct HomeView: View {
                     startExercise: $startExercise
                 )
                 .navigationBarBackButtonHidden(true)
-                .navigationDestination(isPresented: $startExercise) {
-                    ExerciseView(
-                        isPresented: $startExercise,
-                        configuration: exerciseConfiguration
-                    )
-                    .navigationBarBackButtonHidden(true)
-                }
+                
+            }
+            .navigationDestination(isPresented: $startExercise) {
+                ExerciseView(
+                    isPresented: $startExercise,
+                    configuration: exerciseConfiguration
+                )
+                .navigationBarBackButtonHidden(true)
             }
         }
     }
