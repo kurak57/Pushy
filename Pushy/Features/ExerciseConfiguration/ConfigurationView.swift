@@ -110,8 +110,10 @@ struct ConfigurationView: View {
                         .padding(.bottom, 12)
                     
                     Divider()
-                        .foregroundColor(Color.white)
-                    
+                        .frame(height: 1)
+                        .background(Color.white.opacity(0.3))
+                        .padding(.horizontal)
+
                     // Picker
                     Picker("Rest Time", selection: Binding(
                         get: { viewModel.configuration.restTime },
@@ -153,7 +155,7 @@ struct ConfigurationView: View {
                         
                     }
                 }
-                .background(Color.black.ignoresSafeArea())
+                .background(Color.sheet.ignoresSafeArea())
                 .presentationDetents([.fraction(0.4)])
             }
         }
@@ -245,7 +247,7 @@ struct ConfigurationView: View {
                 viewModel.removeSet(at: index)
             } label: {
                 Image(systemName: "trash")
-                    .foregroundColor(.red)
+                    .foregroundColor(.gray.opacity(0.7))
             }
             .buttonStyle(.plain)
         }
