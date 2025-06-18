@@ -3,6 +3,7 @@ import Vision
 import Combine
 import UIKit
 import SwiftUI
+import AVFoundation
 
 @MainActor
 public class ExerciseViewModel: ObservableObject {
@@ -39,6 +40,8 @@ public class ExerciseViewModel: ObservableObject {
     private var correctPositionStartTime: TimeInterval?
     private let requiredPositionHoldTime: TimeInterval = 3.0
     private var wasInCorrectPosition: Bool = false
+    private var audioPlayer: AVAudioPlayer?
+    private var completionAudioPlayer: AVAudioPlayer?
     
     // MARK: - Per‑arm rep‑counting state
     private enum Side { case left, right }
@@ -89,6 +92,7 @@ public class ExerciseViewModel: ObservableObject {
     init(configuration: ExerciseConfiguration) {
         self.configuration = configuration
         setupPipeline()
+        setupAudioPlayer()
     }
     
     // MARK: - Public Methods
@@ -96,6 +100,7 @@ public class ExerciseViewModel: ObservableObject {
         stopAllTimers()
         videoCapture?.isEnabled = false
         cancellables.removeAll()
+        disableScreenWake() // Disable screen wake when cleaning up
     }
     
     func setupPipeline() {
@@ -132,6 +137,7 @@ public class ExerciseViewModel: ObservableObject {
         repCount = 0
         currentSet = 0
         resetRepCount()
+        enableScreenWake() // Enable screen wake when exercise starts
     }
     
     func resetExercise() {
@@ -143,11 +149,50 @@ public class ExerciseViewModel: ObservableObject {
         repCount = 0
         currentSet = 0
         resetRepCount()
+        enableScreenWake() // Enable screen wake when exercise resets
         
         // Start the exercise again after a short delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.startExercise()
         }
+    }
+    
+    private func setupAudioPlayer() {
+        // Setup good curl sound
+        guard let soundURL = Bundle.main.url(forResource: "good_curl", withExtension: "mp3") else {
+            print("Could not find good curl sound file")
+            return
+        }
+        
+        do {
+            audioPlayer = try AVAudioPlayer(contentsOf: soundURL)
+            audioPlayer?.prepareToPlay()
+        } catch {
+            print("Could not create good curl audio player: \(error)")
+        }
+        
+        // Setup completion sound
+        guard let completionSoundURL = Bundle.main.url(forResource: "exercise_complete", withExtension: "mp3") else {
+            print("Could not find completion sound file")
+            return
+        }
+        
+        do {
+            completionAudioPlayer = try AVAudioPlayer(contentsOf: completionSoundURL)
+            completionAudioPlayer?.prepareToPlay()
+        } catch {
+            print("Could not create completion audio player: \(error)")
+        }
+    }
+    
+    private func playGoodCurlSound() {
+        audioPlayer?.currentTime = 0
+        audioPlayer?.play()
+    }
+    
+    private func playCompletionSound() {
+        completionAudioPlayer?.currentTime = 0
+        completionAudioPlayer?.play()
     }
     
     // MARK: - Private Methods
@@ -161,6 +206,7 @@ public class ExerciseViewModel: ObservableObject {
     private func startCountdown() {
         countdown = 3
         isCountingDown = true
+        isExerciseActive = false
         Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
             guard let self = self else {
                 timer.invalidate()
@@ -174,6 +220,7 @@ public class ExerciseViewModel: ObservableObject {
                     } else {
                         timer.invalidate()
                         self.isCountingDown = false
+                        self.isExerciseActive = true
                         self.countdown = nil
                     }
                 }
@@ -213,8 +260,9 @@ public class ExerciseViewModel: ObservableObject {
     // MARK: - State Updates
     func handleCountdownChange() {
         if !isLastSet && countdown == nil {
-                isExerciseActive = true
-                currentSet += 1
+            isExerciseActive = true
+            currentSet += 1
+            enableScreenWake() // Enable screen wake when exercise becomes active
         }
     }
     
@@ -226,8 +274,12 @@ public class ExerciseViewModel: ObservableObject {
             if isLastSet {
                 isExerciseActive = false
                 isSessionCompleted = true
+                playCompletionSound() // Play completion sound when session is done
+                disableScreenWake() // Disable screen wake when session is completed
             } else {
                 startRestTimer()
+                // Keep screen awake during rest periods
+                enableScreenWake()
             }
         }
     }
@@ -312,6 +364,7 @@ public class ExerciseViewModel: ObservableObject {
         if didGeometryRep && isGoodCurl {
             if repCount < currentConfig.reps {
                 repCount += 1
+                playGoodCurlSound() // Play sound when a good curl is counted
             }
         }
     }
@@ -533,6 +586,19 @@ public class ExerciseViewModel: ObservableObject {
         let dex = point2.x - point1.x
         let dey = point2.y - point1.y
         return sqrt(dex * dex + dey * dey)
+    }
+    
+    // MARK: - Screen Wake
+    private func enableScreenWake() {
+        DispatchQueue.main.async {
+            UIApplication.shared.isIdleTimerDisabled = true
+        }
+    }
+    
+    private func disableScreenWake() {
+        DispatchQueue.main.async {
+            UIApplication.shared.isIdleTimerDisabled = false
+        }
     }
 }
 
