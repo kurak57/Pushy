@@ -8,7 +8,6 @@
 import SwiftUI
 import AVKit
 
-
 struct ExerciseSet {
     var weight: Double
     var reps: Int
@@ -55,7 +54,7 @@ struct ConfigurationView: View {
             ],
             startPoint: UnitPoint(x: 0.5, y: 0),
             endPoint: UnitPoint(x: 0.5, y: 1)
-            ))
+        ))
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
@@ -74,20 +73,18 @@ struct ConfigurationView: View {
             .padding()
     }
     
-    
-    
     private var restTimeSection: some View {
         HStack {
             Image(systemName: "alarm")
                 .foregroundColor(.highlightPurple)
             Text("Rest Timer:")
                 .foregroundColor(.highlightPurple)
-
+            
             Spacer()
-
-            Button(action: {
+            
+            Button {
                 showRestTimePicker = true
-            }) {
+            } label: {
                 HStack(spacing: 4) {
                     Text(viewModel.configuration.restTime == 0 ? "OFF" : "\(viewModel.configuration.restTime)s")
                         .foregroundColor(.highlightPurple)
@@ -105,16 +102,16 @@ struct ConfigurationView: View {
                         .foregroundColor(Color.gray.opacity(0.5))
                         .padding(.top, 8)
                         .padding(.bottom, 12)
-
+                    
                     // Title
                     Text("Rest Timer")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.highlightPurple)
                         .padding(.bottom, 12)
-
+                    
                     Divider()
                         .foregroundColor(Color.white)
-
+                    
                     // Picker
                     Picker("Rest Time", selection: Binding(
                         get: { viewModel.configuration.restTime },
@@ -136,9 +133,9 @@ struct ConfigurationView: View {
                     .clipped()
                     .padding(.top, 4)
                     .accentColor(.highlightPurple)
-
+                    
                     Spacer()
-
+                    
                     // Done Button
                     Button(action: {
                         showRestTimePicker = false
@@ -153,7 +150,7 @@ struct ConfigurationView: View {
                             .padding(.horizontal, 24)
                             .padding(.bottom, 24)
                             .shadow(color: .gray, radius: 0, x: 0, y: 4)
-                            
+                        
                     }
                 }
                 .background(Color.black.ignoresSafeArea())
@@ -256,7 +253,6 @@ struct ConfigurationView: View {
         .padding(.horizontal)
         .frame(maxWidth: .infinity, alignment: .center)
     }
-
     
     private var addSetButton: some View {
         Button(action: viewModel.addSet) {
@@ -272,11 +268,11 @@ struct ConfigurationView: View {
     
     private var startWorkoutButton: some View {
         VStack {
-            Button(action: {
+            Button {
                 if viewModel.validateConfiguration() {
                     onStartWorkout(viewModel.configuration)
                 }
-            }) {
+            } label: {
                 Text("Start Workout")
                     .foregroundColor(.black)
                     .fontWeight(.semibold)
@@ -289,6 +285,7 @@ struct ConfigurationView: View {
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 24)
+            .shadow(color: .gray, radius: 0, x: 0, y: 4)
             .shadow(color: .gray, radius: 0, x: 0, y: 4)
         }
         .background(
