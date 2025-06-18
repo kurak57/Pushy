@@ -6,13 +6,13 @@ import SwiftUI
 
 struct ExerciseView: View {
     @Binding var isPresented: Bool
+    @State private var isNoPersonDetected: Bool = false
     @StateObject private var viewModel: ExerciseViewModel
     
     init(isPresented: Binding<Bool>, configuration: ExerciseConfiguration) {
         self._isPresented = isPresented
         self._viewModel = StateObject(wrappedValue: ExerciseViewModel(configuration: configuration))
     }
-
     var body: some View {
         GeometryReader { geo in
             ZStack {
@@ -20,39 +20,48 @@ struct ExerciseView: View {
                 CameraPreviewView(viewModel: viewModel)
                     .frame(width: geo.size.width, height: geo.size.height)
                     .clipped()
-
-                // Gradient Overlay
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color.black.opacity(0.7),
-                        Color.black.opacity(0.3),
-                        Color.clear,
-                        Color.clear,
-                        Color.black.opacity(0.3),
-                        Color.black.opacity(0.7)
-                    ]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                
+                // "No Person" Overlay
+                if isNoPersonDetected && !viewModel.isResting{
+                    Color.black.opacity(0.6)
+                        .ignoresSafeArea()
+                }
                 // UI Elements Layer
                 VStack {
-                    TopControlButtons(isPresented: $isPresented, resetAction: viewModel.resetExercise)
-                        .padding(.top, 16)
-                    if viewModel.isExerciseActive && !viewModel.isSessionCompleted {
-                        RepetitionCounterDisplay(
-                            repetitionCount: viewModel.repCount,
-                            actionLabel: viewModel.actionLabel,
-                            confidenceLabel: viewModel.confidenceLabel
+                    TopControlButtons(
+                        isPresented: $isPresented,
+                        resetAction: viewModel.resetExercise,
+                        isExerciseActive: viewModel.isExerciseActive,
+                        isSessionCompleted: viewModel.isSessionCompleted,
+                        repetitionCount: viewModel.repCount
+                    )
+                    .safeAreaPadding(.top)
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.black, Color.black.opacity(0.2)]),
+                            startPoint: .top,
+                            endPoint: .bottom
                         )
-                        .padding(.top, 16)
-                    }
+                    )
                     
+                    if viewModel.isExerciseActive &&
+                       !viewModel.isSessionCompleted &&
+                       !viewModel.isResting &&
+                       (viewModel.actionLabel == "Loose Back" || viewModel.actionLabel == "Elevated Elbow") {
+
+                        Text(viewModel.actionLabel)
+                            .font(.system(size: 40, weight: .bold))
+                            .foregroundColor(.red)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(Color.black.opacity(0.5))
+                            .cornerRadius(12)
+                    }
+
+
                     Spacer()
                 }
-                .safeAreaPadding(.top)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
+                
                 // Position Guide and Feedback Layer
                 if viewModel.countdown == nil && !viewModel.isExerciseActive && !viewModel.isSessionCompleted {
                     PositionGuideView(geo: geo, isPositionCorrect: viewModel.isInCorrectPosition)
@@ -65,7 +74,7 @@ struct ExerciseView: View {
                         .transition(.opacity)
                     }
                 }
-
+                
                 // Exercise State Layer
                 if !viewModel.isSessionCompleted {
                     if viewModel.isResting {
@@ -93,7 +102,6 @@ struct ExerciseView: View {
                 if let count = viewModel.countdown {
                     CountdownDisplay(count: count, isCountingDown: viewModel.isCountingDown)
                 }
-
                 // Session Completed Layer
                 if viewModel.isSessionCompleted {
                     SessionCompletedView(
@@ -110,14 +118,23 @@ struct ExerciseView: View {
             viewModel.startCamera()
         }
         .onChange(of: viewModel.countdown) { _, _ in
+            
             viewModel.handleCountdownChange()
         }
         .onChange(of: viewModel.repCount) { _, _ in
             viewModel.handleRepetitionChange()
         }
+        .onChange(of: viewModel.actionLabel) { _, newValue in
+            if newValue == "No Person" {
+                isNoPersonDetected = true
+            } else if isNoPersonDetected {
+                isNoPersonDetected = false
+            }
+        }
         .onDisappear {
             viewModel.stopCamera()
         }
+        
     }
 }
 
