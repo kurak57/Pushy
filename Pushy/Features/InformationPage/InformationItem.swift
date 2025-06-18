@@ -11,7 +11,7 @@ struct InformationItem: View {
     let item: InformationModel
     
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 16) {
             Text(item.icon)
                 .font(.roundedmplus(size: 48))
                 .foregroundColor(.primary)
@@ -27,4 +27,8 @@ struct InformationItem: View {
             }
         }
     }
+}
+
+#Preview {
+    InformationItem(item: .init(icon: "🔔", title: "Title", message: "Message"))
 }

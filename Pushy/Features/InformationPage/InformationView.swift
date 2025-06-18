@@ -20,9 +20,9 @@ struct InformationView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
+            VStack(spacing: 16) {
                 // Header
-                VStack(spacing: 16) {
+                VStack(spacing: 0) {
                     Image("mascot")
                         .resizable()
                         .scaledToFit()
@@ -32,18 +32,18 @@ struct InformationView: View {
                         .bold()
                         .foregroundColor(.white)
                 }
-                .padding(.top, 40)
+                
                 
                 // Card
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 20) {
                     ForEach(infoItems) { item in
                         InformationItem(item: item)
                     }
                 }
-                .padding()
+                .padding(16)
                 .background(Color.bgPurple40.opacity(0.4))
                 .cornerRadius(24)
-                .padding()
+//                .padding(16)
                 
                 Spacer()
                 
@@ -53,7 +53,7 @@ struct InformationView: View {
                     onFinish()
                 }) {
                     Text("Got it")
-                        .font(.roundedmplus(size: 20))
+                        .font(.roundedmplus(size: 17))
                         .foregroundColor(.black)
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -64,6 +64,7 @@ struct InformationView: View {
                 .padding(.bottom)
                 .shadow(color: .gray, radius: 0, x: 0, y: 4)
             }
+            .padding(.horizontal, 16)
             .background(
                 LinearGradient(
                     stops: [
@@ -79,9 +80,8 @@ struct InformationView: View {
     }
 }
 
-//#Preview {
-//    InformationView(onFinish: {
-//        hasSeenFeatureInfo = true
-//    })
-//        
-//}
+#Preview {
+    InformationView {
+        print("Dismissed")
+    }
+}
