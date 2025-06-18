@@ -19,20 +19,19 @@ let onboardingModel: [OnboardingModel] = [
     OnboardingModel(
         imageName: "tws",
         title: "Use Earphones",
-        description: "Connect Bluetooth earphones for real-time voice feedback",
+        description: "Connect Bluetooth earphones for better experience",
         subtext: "No earphones? You can still continue"
     ),
     OnboardingModel(
-        imageName: "tripod",
+        imageName: "Set Your Phone",
         title: "Set Your Phone",
-        description: "Place it where your full body is visible—tripod, mirror, or stable surface",
+        description: "Use a tripod, stick your phone to a mirror, or lean it on something stable",
         subtext: "Make sure the phone is steady and won’t fall during your workout"
     ),
     OnboardingModel(
-        imageName: "body",
+        imageName: "Be Ready!",
         title: "Align with Silhouette",
-        description: "Stand still and match your body to the outline",
-        subtext: "The outline turns white when you’re in the right spot"
+        description: "When you’re ready, tap “Get Started”",
+        subtext: "Then, align your body with the silhouette to begin calibration"
     )
 ]
-

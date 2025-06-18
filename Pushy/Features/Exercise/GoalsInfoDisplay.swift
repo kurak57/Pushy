@@ -30,4 +30,4 @@ struct GoalsInfoDisplay: View {
 
 #Preview {
     GoalsInfoDisplay(currentSet: 1, totalSets: 3, totalReps: 5, weight: 10.5)
-} 
+}

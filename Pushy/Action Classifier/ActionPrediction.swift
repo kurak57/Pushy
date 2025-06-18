@@ -1,5 +1,5 @@
 /*
-See LICENSE folder for this sample’s licensing information.
+See LICENSE folder for this sample's licensing information.
 
 Abstract:
 Bundles an action label with a confidence value.
@@ -15,14 +15,12 @@ struct ActionPrediction {
     let label: String
 
     /// The Exercise Classifier's confidence in its prediction.
-    let confidence: Double!
+    let confidence: Double
 
     /// A string that represents the confidence as percentage if applicable;
     /// otherwise `nil`.
     var confidenceString: String? {
-        guard let confidence = confidence else {
-            return nil
-        }
+        let confidence = confidence
 
         // Convert the confidence to a percentage based string.
         let percent = confidence * 100
@@ -65,7 +63,7 @@ extension ActionPrediction {
     /// Only the `lowConfidence()` and `noPerson()` type methods use this initializer.
     private init(_ otherLabel: AppLabel) {
         label = otherLabel.rawValue
-        confidence = nil
+        confidence = 0.0
     }
 
     /// A Boolean that indicates whether the label is from the action classifier model.
@@ -76,5 +74,5 @@ extension ActionPrediction {
     /// A Boolean that indicates whether the label is from the app.
     ///
     /// `isAppLabel` and `isModelLabel` are mutually exclusive.
-    var isAppLabel: Bool { confidence == nil }
+    var isAppLabel: Bool { confidence == 0.0 }
 }

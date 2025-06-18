@@ -20,7 +20,6 @@ struct StepComponent: View {
             let segmentWidth = availableWidth / CGFloat(max(totalSteps - 1, 1))
             let progressWidth = max(0, CGFloat(currentStep) * (segmentWidth + circleDiameter) + circleDiameter / 2)
             
-
             ZStack(alignment: .leading) {
                 // Background Bar
                 Capsule()
@@ -65,14 +64,23 @@ struct StepComponent: View {
         case 0:
             return index == 0 ? .B : .defaultCircle
         case 1:
-            if index == 0 { return .circle1 }
-            else if index == 1 { return .B }
-            else { return .defaultCircle }
+            if index == 0 {
+                return .circle1
+            } else if index == 1 {
+                return .B
+            } else {
+                return .defaultCircle
+            }
         case 2:
-            if index == 0 { return .circle2 }
-            else if index == 1 { return .circle3 }
-            else if index == 2 { return .B }
-            else { return .defaultCircle }
+            if index == 0 {
+                return .circle2
+            } else if index == 1 {
+                return .circle3
+            } else if index == 2 {
+                return .B
+            } else {
+                return .defaultCircle
+            }
         default:
             return .defaultCircle
         }

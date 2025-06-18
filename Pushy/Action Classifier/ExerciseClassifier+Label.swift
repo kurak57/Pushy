@@ -15,7 +15,7 @@ extension sumpahkaliinibisa_3 {
         case goodCurl = "Good Bicep Curl"
         case elevatedElbow = "Elevated Elbow"
 
-        /// A negative class that represents irrelevant actions.
+// A negative class that represents irrelevant actions.
 //        case otherAction = "Other Action"
 
         /// Creates a label from a string.

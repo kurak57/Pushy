@@ -31,7 +31,18 @@ struct SessionCompletedView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(LinearGradient(gradient: Gradient(colors: [Color(red: 0.25, green: 0.1, blue: 0.4), Color(red: 0, green: 0, blue: 0), Color(red: 0.1, green: 0.3, blue: 0.25)]), startPoint: .top, endPoint: .bottom))
+        .background(
+            LinearGradient(gradient:
+                Gradient(colors:
+                    [
+                        Color(red: 0.25, green: 0.1, blue: 0.4),
+                        Color(red: 0, green: 0, blue: 0),
+                        Color(red: 0.1, green: 0.3, blue: 0.25)
+                    ]
+                        ),
+                           startPoint: .top, endPoint: .bottom
+                          )
+        )
         .ignoresSafeArea()
     }
         

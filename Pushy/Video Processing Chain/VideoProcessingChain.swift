@@ -1,5 +1,5 @@
 /*
-See LICENSE folder for this sample’s licensing information.
+See LICENSE folder for this sample's licensing information.
 
 Abstract:
 Builds a chain of Combine publisher-subscribers upon the video capture
@@ -44,8 +44,12 @@ struct VideoProcessingChain {
     ///
     /// Set this property to begin extracting poses and predicting actions.
     /// - Tag: upstreamFramePublisher
-    var upstreamFramePublisher: AnyPublisher<Frame, Never>! {
-        didSet { buildProcessingChain() }
+    var upstreamFramePublisher: AnyPublisher<Frame, Never>? {
+        didSet { 
+            if upstreamFramePublisher != nil {
+                buildProcessingChain()
+            }
+        }
     }
 
     /// A cancellation token for the active video-processing chain.
@@ -109,7 +113,7 @@ extension VideoProcessingChain {
 
         // Create the chain of publisher-subscribers that transform the raw video
         // frames from upstreamFramePublisher.
-        frameProcessingChain = upstreamFramePublisher
+        frameProcessingChain = upstreamFramePublisher?
             // ---- Frame (aka CMSampleBuffer) -- Frame ----
 
             // Convert each frame to a CGImage, skipping any that don't convert.
@@ -208,7 +212,6 @@ extension VideoProcessingChain {
         }
         return poses
     }
-
 
     /// Returns the largest pose by area.
     /// - Parameter poses: A `Pose` array optional.

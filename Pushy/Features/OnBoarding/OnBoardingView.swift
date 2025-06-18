@@ -12,7 +12,6 @@ struct OnboardingView: View {
     @Binding var startExercise: Bool
     @State private var currentIndex = 0
     
-
     var body: some View {
         VStack {
             ZStack {
@@ -27,7 +26,6 @@ struct OnboardingView: View {
                     Spacer()
                 }
                 
-
                 StepComponent(totalSteps: onboardingModel.count, currentStep: currentIndex)
                     .frame(width: 200)
             }
@@ -109,7 +107,6 @@ struct OnboardingView: View {
         .background(Color.black.ignoresSafeArea())
     }
 }
-
 
 struct OnboardingView_Previews: PreviewProvider {
     static var previews: some View {

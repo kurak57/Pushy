@@ -1,0 +1,11 @@
+//
+//  .gitignore
+//  Pushy
+//
+//  Created by Mutakin on 17/06/25.
+//
+
+
+**/UserInterfaceState.xcuserstate
+**/xcschememanagement.plist
+**/project.pbxproj

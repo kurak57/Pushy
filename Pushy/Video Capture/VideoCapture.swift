@@ -33,8 +33,12 @@ class VideoCapture: NSObject {
     /// The video capture's delegate.
     ///
     /// Set this property to receive pose and action prediction notifications.
-    weak var delegate: VideoCaptureDelegate! {
-        didSet { createVideoFramePublisher() }
+    weak var delegate: VideoCaptureDelegate? {
+        didSet { 
+            if let delegate = delegate {
+                createVideoFramePublisher()
+            }
+        }
     }
 
     /// A Boolean that indicates whether to publish video frames.
@@ -161,7 +165,7 @@ extension VideoCapture {
         let genericFramePublisher = passthroughSubject.eraseToAnyPublisher()
 
         // Send the publisher to the `VideoCapture` instance's delegate.
-        delegate.videoCapture(self, didCreate: genericFramePublisher)
+        delegate?.videoCapture(self, didCreate: genericFramePublisher)
     }
 
     /// Configures or reconfigures the session to the new camera settings.

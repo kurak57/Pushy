@@ -5,7 +5,6 @@
 //  Created by Mutakin on 14/06/25.
 //
 
-
 import SwiftUI
 
 struct ExerciseSet {
@@ -32,7 +31,7 @@ struct ConfigurationView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             ScrollView {
-                VStack() {
+                VStack {
                     titleSection
                     videoPreviewSection
                     restTimeSection
@@ -50,7 +49,7 @@ struct ConfigurationView: View {
             stops: [
                 Gradient.Stop(color: .bgPurple40, location: 0.00),
                 Gradient.Stop(color: .black, location: 0.20),
-                Gradient.Stop(color: .black, location: 1.00),
+                Gradient.Stop(color: .black, location: 1.00)
             ],
             startPoint: UnitPoint(x: 0.5, y: 0),
             endPoint: UnitPoint(x: 0.5, y: 1)
@@ -199,7 +198,7 @@ struct ConfigurationView: View {
             .font(.system(size: 17, weight: .bold, design: .default))
             .foregroundColor(.gray)
             .padding(.bottom, 16)
-            //.frame(maxWidth: .infinity, alignment: .leading)
+            // .frame(maxWidth: .infinity, alignment: .leading)
             
             ForEach(Array(viewModel.configuration.sets.enumerated()), id: \.offset) { index, set in
                 setRow(index: index, set: set)
