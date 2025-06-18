@@ -44,8 +44,8 @@ public class ConfigurationViewModel: ObservableObject {
         // Validate each set
         for set in configuration.sets {
             guard set.weight > 0,
-                  set.reps > 0,
-                  configuration.restTime > 0 else {
+                  set.reps > 0
+                  /*configuration.restTime > 0*/ else {
                 return false
             }
         }

@@ -1,10 +1,3 @@
-//
-//  InformationView.swift
-//  Pushy
-//
-//  Created by Andrea Octaviani on 18/06/25.
-//
-
 import SwiftUI
 
 struct InformationView: View {
@@ -20,68 +13,70 @@ struct InformationView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Header
+            ZStack {
                 VStack(spacing: 16) {
-                    Image("mascot")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 120, height: 120)
-                    Text("Quick Heads-Up")
-                        .font(.roundedmplus(size: 28))
-                        .bold()
-                        .foregroundColor(.white)
-                }
-                .padding(.top, 40)
-                
-                // Card
-                VStack(alignment: .leading, spacing: 24) {
-                    ForEach(infoItems) { item in
-                        InformationItem(item: item)
+                    // Header
+                    VStack(spacing: 0) {
+                        Image("mascot")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 120, height: 120)
+                        Text("Quick Heads-Up")
+                            .font(.roundedmplus(size: 28))
+                            .bold()
+                            .foregroundColor(.white)
                     }
+
+                    // Card
+                    VStack(alignment: .leading, spacing: 20) {
+                        ForEach(infoItems) { item in
+                            InformationItem(item: item)
+                        }
+                    }
+                    .padding(16)
+                    .background(Color.bgPurple40.opacity(0.4))
+                    .cornerRadius(24)
+                    Spacer()
                 }
-                .padding()
-                .background(Color.bgPurple40.opacity(0.4))
-                .cornerRadius(24)
-                .padding()
-                
-                Spacer()
-                
+                .padding(.horizontal, 16)
+
                 // Button
-                Button(action: {
-                    // Dismiss or navigate
-                    onFinish()
-                }) {
-                    Text("Got it")
-                        .font(.roundedmplus(size: 20))
-                        .foregroundColor(.black)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.white)
-                        .cornerRadius(8)
-                        .padding(.horizontal)
+                VStack {
+                    Spacer()
+                    Button {
+                        onFinish()
+                    } label: {
+                        Text("Got it")
+                            .font(.roundedmplus(size: 17))
+                            .foregroundColor(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.white)
+                            .cornerRadius(8)
+                            .padding(.horizontal)
+                    }
+                    .padding(.bottom, 24)
+                    .shadow(color: .gray, radius: 0, x: 0, y: 4)
                 }
-                .padding(.bottom)
-                .shadow(color: .gray, radius: 0, x: 0, y: 4)
             }
             .background(
                 LinearGradient(
                     stops: [
-                        Gradient.Stop(color: .bgPurple40, location: 0.00),
-                        Gradient.Stop(color: .black, location: 0.20),
-                        Gradient.Stop(color: .black, location: 1.00)
+                        .init(color: .bgPurple40, location: 0.0),
+                        .init(color: .black, location: 0.2),
+                        .init(color: .black, location: 1.0)
                     ],
-                    startPoint: UnitPoint(x: 0.5, y: 0),
-                    endPoint: UnitPoint(x: 0.5, y: 1)
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
+                .ignoresSafeArea()
             )
         }
     }
 }
 
-//#Preview {
-//    InformationView(onFinish: {
-//        hasSeenFeatureInfo = true
-//    })
-//        
-//}
+#Preview {
+    InformationView {
+        print("Dismissed")
+    }
+}

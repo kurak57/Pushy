@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AVKit
 
 struct ExerciseSet {
     var weight: Double
@@ -33,7 +34,7 @@ struct ConfigurationView: View {
             ScrollView {
                 VStack {
                     titleSection
-                    videoPreviewSection
+                    VideoPlayerView(videoName: "bicep-curl-video", fileExtension: "mp4")
                     restTimeSection
                     setsSection
                     addSetButton
@@ -53,7 +54,7 @@ struct ConfigurationView: View {
             ],
             startPoint: UnitPoint(x: 0.5, y: 0),
             endPoint: UnitPoint(x: 0.5, y: 1)
-            ))
+        ))
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
@@ -72,40 +73,18 @@ struct ConfigurationView: View {
             .padding()
     }
     
-    private var videoPreviewSection: some View {
-        VStack {
-            Image(systemName: "photo") // placeholder
-                .resizable()
-                .scaledToFit()
-                .frame(width: 145, height: 145)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .foregroundColor(.white)
-            
-            Text("Video tutorial")
-                .font(.system(size: 17, weight: .semibold, design: .default))
-                .foregroundColor(.gray)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 24)
-        .frame(maxWidth: .infinity, minHeight: 200, maxHeight: 200, alignment: .center)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.gray.opacity(0.4), lineWidth: 1)
-        )
-    }
-    
     private var restTimeSection: some View {
         HStack {
             Image(systemName: "alarm")
                 .foregroundColor(.highlightPurple)
             Text("Rest Timer:")
                 .foregroundColor(.highlightPurple)
-
+            
             Spacer()
-
-            Button(action: {
+            
+            Button {
                 showRestTimePicker = true
-            }) {
+            } label: {
                 HStack(spacing: 4) {
                     Text(viewModel.configuration.restTime == 0 ? "OFF" : "\(viewModel.configuration.restTime)s")
                         .foregroundColor(.highlightPurple)
@@ -123,15 +102,17 @@ struct ConfigurationView: View {
                         .foregroundColor(Color.gray.opacity(0.5))
                         .padding(.top, 8)
                         .padding(.bottom, 12)
-
+                    
                     // Title
                     Text("Rest Timer")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.highlightPurple)
                         .padding(.bottom, 12)
-
+                    
                     Divider()
-                        .foregroundColor(Color.white)
+                        .frame(height: 1)
+                        .background(Color.white.opacity(0.3))
+                        .padding(.horizontal)
 
                     // Picker
                     Picker("Rest Time", selection: Binding(
@@ -154,13 +135,13 @@ struct ConfigurationView: View {
                     .clipped()
                     .padding(.top, 4)
                     .accentColor(.highlightPurple)
-
+                    
                     Spacer()
-
+                    
                     // Done Button
-                    Button(action: {
+                    Button {
                         showRestTimePicker = false
-                    }) {
+                    } label: {
                         Text("Done")
                             .font(.headline)
                             .frame(maxWidth: .infinity)
@@ -171,10 +152,10 @@ struct ConfigurationView: View {
                             .padding(.horizontal, 24)
                             .padding(.bottom, 24)
                             .shadow(color: .gray, radius: 0, x: 0, y: 4)
-                            
                     }
+
                 }
-                .background(Color.black.ignoresSafeArea())
+                .background(Color.sheet.ignoresSafeArea())
                 .presentationDetents([.fraction(0.4)])
             }
         }
@@ -266,7 +247,7 @@ struct ConfigurationView: View {
                 viewModel.removeSet(at: index)
             } label: {
                 Image(systemName: "trash")
-                    .foregroundColor(.red)
+                    .foregroundColor(.gray.opacity(0.7))
             }
             .buttonStyle(.plain)
         }
@@ -274,7 +255,6 @@ struct ConfigurationView: View {
         .padding(.horizontal)
         .frame(maxWidth: .infinity, alignment: .center)
     }
-
     
     private var addSetButton: some View {
         Button(action: viewModel.addSet) {
@@ -290,11 +270,11 @@ struct ConfigurationView: View {
     
     private var startWorkoutButton: some View {
         VStack {
-            Button(action: {
+            Button {
                 if viewModel.validateConfiguration() {
                     onStartWorkout(viewModel.configuration)
                 }
-            }) {
+            } label: {
                 Text("Start Workout")
                     .foregroundColor(.black)
                     .fontWeight(.semibold)
@@ -307,6 +287,7 @@ struct ConfigurationView: View {
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 24)
+            .shadow(color: .gray, radius: 0, x: 0, y: 4)
             .shadow(color: .gray, radius: 0, x: 0, y: 4)
         }
         .background(

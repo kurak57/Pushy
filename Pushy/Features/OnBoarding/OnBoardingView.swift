@@ -16,13 +16,18 @@ struct OnboardingView: View {
         VStack {
             ZStack {
                 HStack {
-                    Button(action: {
+                    Button {
                         showOnboarding = false
-                    }) {
-                        Image(systemName: "chevron.left")
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 20))
+                            .fontWeight(.bold)
                             .foregroundColor(.gray)
-                            .padding()
+                            .padding(.horizontal)
+                            .padding(.vertical, 8)
                     }
+                    .padding(.bottom, 8)
+                    
                     Spacer()
                 }
                 
@@ -30,48 +35,54 @@ struct OnboardingView: View {
                     .frame(width: 200)
             }
             .padding(.top, 16)
-
+            
             // Onboarding TabView
             TabView(selection: $currentIndex) {
                 ForEach(Array(onboardingModel.enumerated()), id: \.offset) { index, step in
-                    VStack(spacing: 20) {
+                    VStack(spacing: 32) {
                         Text(step.title)
                             .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
+                            .padding(.top, 36)
                         
                         Image(step.imageName)
                             .resizable()
-                            .scaledToFit()
-                            .frame(maxWidth: 200, maxHeight: 200)
-
-                        Text(step.description)
-                            .font(.body)
-                            .foregroundColor(.white)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
-
-                        if let subtext = step.subtext {
-                            Text(subtext)
-                                .font(.footnote)
-                                .foregroundColor(.gray)
+                            .aspectRatio(contentMode: .fit)
+                            .frame(maxHeight: 256)
+                        
+                        VStack (spacing: 24) {
+                            Text(step.description)
+                                .font(.system(size: 17))
+                                .fontWeight(.bold)
                                 .multilineTextAlignment(.center)
+                                .foregroundColor(.white)
+                                .frame(width: 340, alignment: .top)
+                            if let subtext = step.subtext {
+                                Text(subtext)
+                                    .font(.system(size: 17))
+                                    .fontWeight(.medium)
+                                    .multilineTextAlignment(.center)
+                                    .foregroundColor(.gray)
+                                    .frame(width: 320, alignment: .top)
+                            }
                         }
+                        Spacer()
                     }
                     .tag(index)
                 }
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-
+            
             Spacer()
-
+            
             HStack {
-                if currentIndex > 0 {
-                    // Back Button
+                if currentIndex < onboardingModel.count - 1 {
+                    // Skip Button
                     Button(action: {
-                        currentIndex -= 1
+                        startExercise = true
                     }) {
-                        Text("Back")
+                        Text("Skip")
                             .fontWeight(.bold)
                             .frame(maxWidth: .infinity)
                             .padding()
@@ -81,28 +92,32 @@ struct OnboardingView: View {
                             .padding(.leading)
                     }
                 }
-
+                
                 // Next Button
                 Button(action: {
-
+                    
                     if currentIndex < onboardingModel.count - 1 {
                         currentIndex += 1
                     } else {
                         startExercise = true
                     }
                 }) {
-                    Text("Next")
+                    Text(currentIndex == onboardingModel.count - 1 ? "Get Started" : "Next")
                         .fontWeight(.bold)
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.white)
                         .foregroundColor(.black)
                         .cornerRadius(10)
-                        .padding(currentIndex == 0 ? .horizontal : .trailing)
+                        .padding(currentIndex == 0 ? .trailing : .horizontal)
                 }
+                //                .padding(.horizontal, 16)
+                //                .padding(.bottom, 24)
+                .shadow(color: .gray, radius: 0, x: 0, y: 4)
+                .shadow(color: .gray, radius: 0, x: 0, y: 4)
             }
             .padding(.bottom)
-
+            
         }
         .background(Color.black.ignoresSafeArea())
     }
