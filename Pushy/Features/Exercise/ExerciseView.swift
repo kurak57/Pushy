@@ -8,6 +8,7 @@ struct ExerciseView: View {
     @Binding var isPresented: Bool
     @State private var isNoPersonDetected: Bool = false
     @StateObject private var viewModel: ExerciseViewModel
+    @State private var showNiceLabel: Bool = false
     
     init(isPresented: Binding<Bool>, configuration: ExerciseConfiguration) {
         self._isPresented = isPresented
@@ -57,21 +58,27 @@ struct ExerciseView: View {
                                 endPoint: .bottom
                             )
                         )
-                        
                         if viewModel.isExerciseActive &&
                             !viewModel.isSessionCompleted &&
-                            !viewModel.isResting &&
-                            (viewModel.actionLabel == "Loose Back" || viewModel.actionLabel == "Elevated Elbow") {
+                            !viewModel.isResting {
                             
-                            Text(viewModel.actionLabel)
-                                .font(.system(size: 40, weight: .bold))
-                                .foregroundColor(.red)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 10)
-                                .background(Color.black.opacity(0.5))
-                                .cornerRadius(12)
+                            Group {
+                                if showNiceLabel {
+                                    Text("Nice")
+                                        .font(.system(size: 36, weight: .bold))
+                                        .foregroundColor(.green)
+                                } else if viewModel.actionLabel == "Loose Back" || viewModel.actionLabel == "Elevated Elbow" {
+                                    Text(viewModel.actionLabel)
+                                        .font(.system(size: 40, weight: .bold))
+                                        .foregroundColor(.red)
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(Color.black.opacity(0.5))
+                            .cornerRadius(12)
                         }
-                        
+
                         Spacer()
                     }
                 }
@@ -164,6 +171,17 @@ struct ExerciseView: View {
         }
         .onChange(of: viewModel.repCount) { _, _ in
             viewModel.handleRepetitionChange()
+            
+            if viewModel.actionLabel == "Good Bicep Curl" {
+                showNiceLabel = true
+                
+                // Sembunyikan lagi setelah 1 detik
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    withAnimation {
+                        showNiceLabel = false
+                    }
+                }
+            }
         }
         .onChange(of: viewModel.actionLabel) { _, newValue in
             if newValue == "No Person" {
