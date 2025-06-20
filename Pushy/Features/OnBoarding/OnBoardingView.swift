@@ -51,7 +51,7 @@ struct OnboardingView: View {
                             .aspectRatio(contentMode: .fit)
                             .frame(maxHeight: 256)
                         
-                        VStack (spacing: 24) {
+                        VStack(spacing: 24) {
                             Text(step.description)
                                 .font(.system(size: 17))
                                 .fontWeight(.bold)
@@ -79,9 +79,9 @@ struct OnboardingView: View {
             HStack {
                 if currentIndex < onboardingModel.count - 1 {
                     // Skip Button
-                    Button(action: {
+                    Button {
                         startExercise = true
-                    }) {
+                    } label: {
                         Text("Skip")
                             .fontWeight(.bold)
                             .frame(maxWidth: .infinity)
@@ -94,14 +94,13 @@ struct OnboardingView: View {
                 }
                 
                 // Next Button
-                Button(action: {
-                    
+                Button {
                     if currentIndex < onboardingModel.count - 1 {
                         currentIndex += 1
                     } else {
                         startExercise = true
                     }
-                }) {
+                } label: {
                     Text(currentIndex == onboardingModel.count - 1 ? "Get Started" : "Next")
                         .fontWeight(.bold)
                         .frame(maxWidth: .infinity)
