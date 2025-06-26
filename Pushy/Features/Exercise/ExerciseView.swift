@@ -65,61 +65,41 @@ struct ExerciseView: View {
                         Text(viewModel.actionLabel)
                             .font(.system(size: 40, weight: .bold))
                             .foregroundColor(.red)
-                // UI Elements Layer
-                if !isNoPersonDetected {
-                    VStack {
-                        TopControlButtons(
-                            isPresented: $isPresented,
-                            resetAction: viewModel.resetExercise,
-                            isExerciseActive: viewModel.isExerciseActive,
-                            isSessionCompleted: viewModel.isSessionCompleted,
-                            repetitionCount: viewModel.repCount
-                        )
-                        .safeAreaPadding(.top)
-                        .background(
-                            LinearGradient(
-                                gradient: Gradient(colors: [Color.black, Color.black.opacity(0.2)]),
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        if viewModel.isExerciseActive &&
-                            !viewModel.isSessionCompleted &&
-                            !viewModel.isResting {
-                            
-                            Group {
-                                if showNiceLabel {
-                                    Text("Nice")
-                                        .font(.system(size: 36, weight: .bold))
-                                        .foregroundColor(.green)
-                                } else if viewModel.actionLabel == "Loose Back" || viewModel.actionLabel == "Elevated Elbow" {
-                                    Text(viewModel.actionLabel)
-                                        .font(.system(size: 40, weight: .bold))
-                                        .foregroundColor(.red)
-                                }
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(Color.black.opacity(0.5))
-                            .cornerRadius(12)
-                        }
-
-                        Spacer()
                     }
                     
+                    if viewModel.isExerciseActive &&
+                        !viewModel.isSessionCompleted &&
+                        !viewModel.isResting {
+                        
+                        Group {
+                            if showNiceLabel {
+                                Text("Nice")
+                                    .font(.system(size: 36, weight: .bold))
+                                    .foregroundColor(.green)
+                            } else if viewModel.actionLabel == "Loose Back" || viewModel.actionLabel == "Elevated Elbow" {
+                                Text(viewModel.actionLabel)
+                                    .font(.system(size: 40, weight: .bold))
+                                    .foregroundColor(.red)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(Color.black.opacity(0.5))
+                        .cornerRadius(12)
+                    }
                     Spacer()
                 }
                 
                 // Position Guide and Feedback Layer
                 if viewModel.countdown == nil && !viewModel.isExerciseActive && !viewModel.isSessionCompleted {
                     PositionGuideView(geo: geo, isPositionCorrect: viewModel.isInCorrectPosition)
-                    
-                    PositionFeedbackView(
-                        feedback: viewModel.positionFeedback,
-                        isInCorrectPosition: viewModel.isInCorrectPosition
-                    )
-                    .transition(.opacity)
-                    
+                    if !isNoPersonDetected {
+                        PositionFeedbackView(
+                            feedback: viewModel.positionFeedback,
+                            isInCorrectPosition: viewModel.isInCorrectPosition
+                        )
+                        .transition(.opacity)
+                    }
                 }
                 
                 // Exercise State Layer
